@@ -6,7 +6,7 @@ import java.util.Set;
 
 public class Book {
     private Long id;
-    private String name;
+    private String title;
     private String author;
     private Integer publicationYear;
     private Boolean isAvailable;
