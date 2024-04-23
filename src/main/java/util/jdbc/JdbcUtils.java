@@ -1,7 +1,8 @@
 package util.jdbc;
 
-import java.sql.*;
-import java.util.stream.Collectors;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class JdbcUtils {
 
@@ -10,8 +11,7 @@ public class JdbcUtils {
         try {
             connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/books",
                     "postgres", "postgres");
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println("Handler needed");
             e.printStackTrace();
         }
@@ -25,13 +25,13 @@ public class JdbcUtils {
         }
 
         try (connection) {
-                connection.setAutoCommit(false);
-                connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-                runnable.run(connection);
-                connection.commit();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            runnable.run(connection);
+            connection.commit();
         } catch (SQLException e) {
             try (connection) {
-                    connection.rollback();
+                connection.rollback();
                 e.printStackTrace();
             } catch (SQLException ex) {
                 System.out.println("Rollback failed.");
@@ -65,7 +65,7 @@ public class JdbcUtils {
     }
 
     public static void main(String[] args) {
-        inTransactionRun((c)-> System.out.println("ok"));
-        System.out.println((String) inTransactionGet((c)-> "ok"));
+        inTransactionRun((c) -> System.out.println("ok"));
+        System.out.println((String) inTransactionGet((c) -> "ok"));
     }
 }

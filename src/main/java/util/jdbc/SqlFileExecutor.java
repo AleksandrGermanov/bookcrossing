@@ -15,17 +15,21 @@ public class SqlFileExecutor {
     try(Stream<String> queryStream = Files.lines(
             Path.of(System.getProperty("user.dir"),"src/main/resources", "schema.sql"),
             StandardCharsets.UTF_8)){
-        JdbcUtils.inTransactionRun((connection -> {
-            try (Statement statement = connection.createStatement()){
-                statement.execute(queryStream.collect(Collectors.joining()));
-            } catch (SQLException e){
-                System.out.println("sql ex");
-                e.printStackTrace();
-            }
-        }));
+        JdbcUtils.inTransactionRun((prepareRunnable(queryStream.collect(Collectors.joining()))));
     }catch (IOException e){
         System.out.println("reading from schema.sql failed");
         e.printStackTrace();
     }
+    }
+
+    private static InConnectionRunnable prepareRunnable(String query){
+        return connection -> {
+            try (Statement statement = connection.createStatement()){
+                statement.execute(query);
+            } catch (SQLException e){
+                System.out.println("sql ex");
+                e.printStackTrace();
+            }
+        };
     }
 }

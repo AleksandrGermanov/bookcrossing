@@ -7,7 +7,7 @@ public interface CommonDao<T, I>{
     T create(T t);
     T update (T t);
     Optional<T> obtain(I id);
-    Boolean delete(I id);
+    void delete(I id);
     Boolean exists(I id);
     List<T> findAll();
 
