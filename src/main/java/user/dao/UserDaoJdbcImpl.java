@@ -1,5 +1,6 @@
 package user.dao;
 
+import book.dao.BookLazyInitProxy;
 import book.model.Book;
 import exception.DbException;
 import exception.notfound.UserNotFoundException;
@@ -61,13 +62,13 @@ public class UserDaoJdbcImpl implements UserDao {
     }
 
     @Override
-    public Optional<User> obtain(Long userId) {
+    public Optional<User> obtain(Long id) {
         InConnectionSupplier<User> userRead = connection -> {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
                 preparedStatement = connection.prepareStatement(QueryPool.USER_SELECT_BY_ID);
-                preparedStatement.setLong(1, userId);
+                preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
                 return RowMapper.mapSingleResult(resultSet);
             } catch (SQLException e) {
@@ -144,9 +145,8 @@ public class UserDaoJdbcImpl implements UserDao {
                 + "br_to.id br_to_id "
                 + "FROM users u "
                 + "LEFT JOIN owner_cards oc ON oc.owner_id = u.id "
-                + "LEFT JOIN books b ON b.id = oc.book_id "
                 + "LEFT JOIN book_requests br_from ON br_from.requester_id = u.id "
-                + "LEFT JOIN book_requests br_to ON br_to.book_id = b.id "
+                + "LEFT JOIN book_requests br_to ON br_to.book_id = oc.book_id "
                 + "WHERE u.id = ? "
                 + "AND oc.owned_till IS NULL "
                 + "ORDER BY oc.owned_since, br_from.created_on, br_to.created_on;";
@@ -154,8 +154,7 @@ public class UserDaoJdbcImpl implements UserDao {
         private static final String USER_EXISTS = "SELECT EXISTS(SELECT 1 FROM users WHERE id = ?);";
         private static final String USER_FIND_ALL = "SELECT "
                 + "u.id u_id, u.name u_name, u.email u_email, "
-                + "b.id b_id, b.title b_title, b.author b_author, "
-                + "b.publication_year b_year, b.is_available b_available, "
+                + "oc.book_id oc_book_id, "
                 + "br_from.id br_from_id, "
                 + "br_to.id br_to_id "
                 + "FROM users u "
@@ -225,7 +224,7 @@ public class UserDaoJdbcImpl implements UserDao {
 
         private static void addRequest(Set<Long> requests, String columnLabel,
                                        ResultSet resultSet) throws SQLException {
-            Long requestId = resultSet.getLong(columnLabel);
+            long requestId = resultSet.getLong(columnLabel);
             if (requestId == 0) {
                 return;
             }
@@ -247,21 +246,12 @@ public class UserDaoJdbcImpl implements UserDao {
 
         private static void generateBookOwned(Map<Long, Book> booksOwned,
                                               ResultSet resultSet) throws SQLException {
-            Long bookId = resultSet.getLong("b_id");
+            Long bookId = resultSet.getLong("oc_book_id");
             if (bookId == 0 || booksOwned.containsKey(bookId)) {
                 return;
             }
 
-            Book book = new Book();
-            book.setId(bookId);
-            book.setTitle(resultSet.getString("title"));
-            book.setAuthor(resultSet.getString("author"));
-            book.setPublicationYear(
-                    resultSet.getInt("publication_year") != 0
-                            ? resultSet.getInt("publication_year")
-                            : null
-            );
-            book.setIsAvailable(resultSet.getBoolean("is_available"));
+            Book book = new BookLazyInitProxy(bookId);
             booksOwned.put(bookId, book);
         }
     }

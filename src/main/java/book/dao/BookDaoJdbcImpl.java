@@ -4,7 +4,6 @@ import book.model.Book;
 import book.service.BookFetchOrder;
 import exception.DbException;
 import exception.notfound.BookNotFoundException;
-import user.dao.UserDaoJdbcImpl;
 import user.dao.UserLazyInitProxy;
 import user.model.User;
 import util.jdbc.InConnectionRunnable;
@@ -148,15 +147,15 @@ public class BookDaoJdbcImpl implements BookDao {
 
     private void insertParams(LinkedHashMap<String, String> params,
                               PreparedStatement preparedStatement) throws SQLException {
-        if(params == null || params.isEmpty()){
+        if (params == null || params.isEmpty()) {
             return;
         }
 
         int index = 0;
-        for(Map.Entry<String, String> param : params.entrySet()){
-            switch(param.getKey()){
-                case "title", "author" -> preparedStatement.setString(++index, param.getValue());
-                case "publicationYear" -> preparedStatement.setLong(++index, Long.parseLong(param.getValue()));
+        for (Map.Entry<String, String> param : params.entrySet()) {
+            switch (param.getKey()) {
+                case "title", "author" -> preparedStatement.setString(++index, '%' + param.getValue() + '%');
+                case "publicationYear" -> preparedStatement.setInt(++index, Integer.parseInt(param.getValue()));
                 case "isAvailable" -> preparedStatement.setBoolean(++index, Boolean.parseBoolean(param.getValue()));
                 default -> throw new IllegalArgumentException("BookSearch parameter is invalid.");
             }
@@ -176,7 +175,7 @@ public class BookDaoJdbcImpl implements BookDao {
         private static final String BOOK_DELETE = "DELETE FROM books WHERE id = ?;";
         private static final String BOOK_EXISTS = "SELECT EXISTS(SELECT 1 FROM books WHERE id = ?);";
 
-        private static String formSearch(List<String> params, BookFetchOrder order){
+        private static String formSearch(List<String> params, BookFetchOrder order) {
             return new SearchFormer().formSearch(params, order);
         }
 
@@ -185,8 +184,8 @@ public class BookDaoJdbcImpl implements BookDao {
                     + "b.*, oc.owner_id u_id "
                     + "FROM books b "
                     + "LEFT JOIN owner_cards oc ON b.id = oc.book_id ";
-            private static final String TITLE_SEARCH = "title LIKE = %?% ";
-            private static final String AUTHOR_SEARCH = "author LIKE = %?% ";
+            private static final String TITLE_SEARCH = "title LIKE ? ";
+            private static final String AUTHOR_SEARCH = "author LIKE ? ";
             private static final String PUBLICATION_YEAR_SEARCH = "publication_year >= ? ";
             private static final String IS_AVAILABLE_SEARCH = "is_available = TRUE ";
             private static final String WHERE = "WHERE ";
@@ -201,28 +200,32 @@ public class BookDaoJdbcImpl implements BookDao {
 
             private String formSearch(List<String> params, BookFetchOrder order) {
                 currentSearch = new StringBuilder(BASIC_SEARCH_START);
-                if (params!= null && !params.isEmpty()) {
-                for(String param : params) {
-                    if (!isParametrized) {
-                        currentSearch.append(WHERE);
-                        isParametrized = true;
-                    } else {
-                        currentSearch.append(AND);
+                if (params != null && !params.isEmpty()) {
+                    for (String param : params) {
+                        addPrefixKeyWord();
+                        addParamSearchString(param);
                     }
-                    addParamSearchString(param);
-                }
                 }
                 addOrder(order);
 
                 return currentSearch.toString();
             }
 
+            private void addPrefixKeyWord() {
+                if (!isParametrized) {
+                    currentSearch.append(WHERE);
+                    isParametrized = true;
+                } else {
+                    currentSearch.append(AND);
+                }
+            }
+
             private void addOrder(BookFetchOrder order) {
                 currentSearch.append(ORDER_BY);
-                if(order == null){
+                if (order == null) {
                     order = BookFetchOrder.DEFAULT;
                 }
-                switch (order){
+                switch (order) {
                     case PUBLICATION_YEAR_DESC -> currentSearch.append(PUBLICATION_YEAR_DESC);
                     case IS_AVAILABLE_DESC -> currentSearch.append(IS_AVAILABLE_DESC);
                 }
@@ -230,7 +233,7 @@ public class BookDaoJdbcImpl implements BookDao {
             }
 
             private void addParamSearchString(String param) {
-                switch (param){
+                switch (param) {
                     case "title" -> currentSearch.append(TITLE_SEARCH);
                     case "author" -> currentSearch.append(AUTHOR_SEARCH);
                     case "publicationYear" -> currentSearch.append(PUBLICATION_YEAR_SEARCH);
@@ -253,7 +256,9 @@ public class BookDaoJdbcImpl implements BookDao {
             }
             book.setOwnedBy(new ArrayList<>(ownedBy.values()));
 
-            return book;
+            return book.getId() != null
+                    ? book
+                    : null;
         }
 
         private static void addOwnedBy(Map<Long, User> ownedBy, ResultSet resultSet) throws SQLException {
@@ -282,14 +287,14 @@ public class BookDaoJdbcImpl implements BookDao {
             }
         }
 
-        private static List<Book> mapResultList(ResultSet resultSet) throws SQLException{
-            List<Book> books  = new ArrayList<>();
+        private static List<Book> mapResultList(ResultSet resultSet) throws SQLException {
+            List<Book> books = new ArrayList<>();
             Map<Long, User> ownedBy = new LinkedHashMap<>();
-            Book book =new Book();
+            Book book = new Book();
 
             while (resultSet.next()) {
-                if(book.getId() != null
-                        && book.getId().equals(resultSet.getLong("id"))){
+                if (book.getId() != null
+                        && book.getId().equals(resultSet.getLong("id"))) {
                     book.setOwnedBy(new ArrayList<>(ownedBy.values()));
                     books.add(book);
                     book = new Book();

@@ -3,58 +3,86 @@ package user.dao;
 import book.model.Book;
 import exception.notfound.UserNotFoundException;
 import user.model.User;
+import util.beanlib.dao.DaoLib;
 
 import java.util.List;
+import java.util.Objects;
 
 public class UserLazyInitProxy extends User {
     private final Long id;
-    private final UserDao userDao = new UserDaoJdbcImpl();
+    private final UserDao userDao = DaoLib.getDefaultUserDao();
     private User user;
 
 
-    public UserLazyInitProxy(Long id){
+    public UserLazyInitProxy(Long id) {
         this.id = id;
     }
 
+
     @Override
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
     @Override
-    public String getName(){
+    public String getName() {
         initUser();
         return user.getName();
     }
 
     @Override
-    public String getEmail(){
+    public String getEmail() {
         initUser();
         return user.getEmail();
     }
 
     @Override
-    public List<Book> getBooksOwned(){
+    public List<Book> getBooksOwned() {
         initUser();
         return user.getBooksOwned();
     }
 
     @Override
-    public List<Long> getRequestsFrom(){
+    public List<Long> getRequestsFrom() {
         initUser();
         return user.getRequestsFrom();
     }
 
     @Override
-    public List<Long> getRequestsTo(){
+    public List<Long> getRequestsTo() {
         initUser();
         return user.getRequestsTo();
     }
 
-    private void initUser(){
-        if(user == null){
+    private void initUser() {
+        if (user == null) {
             user = userDao.obtain(id).orElseThrow(() -> new UserNotFoundException(id)
             );
         }
+    }
+
+    @Override
+    public String toString() {
+        initUser();
+        return user.toString();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object != null && User.class.equals(object.getClass())) {
+            initUser();
+            return user.equals(object);
+        }
+        if (object == null || getClass() != object.getClass()) return false;
+        if (!super.equals(object)) return false;
+        UserLazyInitProxy that = (UserLazyInitProxy) object;
+        return Objects.equals(id, that.id) && Objects.equals(userDao, that.userDao) && Objects.equals(user, that.user);
+    }
+
+    @Override
+    public int hashCode() {
+        initUser();
+        return Objects.hash(super.hashCode(), id, userDao, user);
     }
 }
