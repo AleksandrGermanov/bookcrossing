@@ -1,7 +1,7 @@
 package util.jdbc;
 
 import exception.DbException;
-import exception.notfound.SqlFileExecutionException;
+import exception.SqlFileExecutionException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

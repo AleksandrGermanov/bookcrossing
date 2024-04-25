@@ -105,7 +105,7 @@ public class UserDaoJdbcImpl implements UserDao {
                 resultSet = preparedStatement.executeQuery();
                 return resultSet.next();
             } catch (SQLException e) {
-                throw new DbException("User existence check failed");
+                throw new DbException("User existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
@@ -193,6 +193,7 @@ public class UserDaoJdbcImpl implements UserDao {
             Set<Long> requestsFrom = new LinkedHashSet<>();
             Set<Long> requestsTo = new LinkedHashSet<>();
             User user = new User();
+
             while (resultSet.next()) {
                 if (user.getId() != null
                         && !user.getId().equals(resultSet.getLong("u_id"))) {
@@ -208,6 +209,7 @@ public class UserDaoJdbcImpl implements UserDao {
                 addRequest(requestsFrom, "br_from_id", resultSet);
                 addRequest(requestsTo, "br_to_id", resultSet);
             }
+            mergeIntoUser(user, booksOwned, requestsFrom, requestsTo);
 
             return users;
         }

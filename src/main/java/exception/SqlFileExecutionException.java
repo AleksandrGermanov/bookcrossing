@@ -1,4 +1,4 @@
-package exception.notfound;
+package exception;
 
 import exception.BookcrossingException;
 

@@ -1,5 +1,7 @@
 package util.jdbc;
 
+import exception.DbException;
+
 import java.sql.*;
 
 public class JdbcUtils {
@@ -50,19 +52,19 @@ public class JdbcUtils {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             value = supplier.get(connection);
             connection.commit();
-        } catch (SQLException e) {
+        } catch (SQLException | DbException e) {
             try (connection) {
                 connection.rollback();
-                e.printStackTrace();
+                throw new DbException("Transaction rollback performed due to "
+                        + e.getClass() + " with message " + "'" + e.getMessage() + "'.");
             } catch (SQLException ex) {
-                System.out.println("Rollback failed.");
-                e.printStackTrace();
+                throw new DbException("Rollback failed.");
             }
         }
         return value;
     }
 
-    public static void tryClose(ResultSet resultSet, Statement statement){
+    public static void tryClose(ResultSet resultSet, Statement statement) {
         try {
             if (resultSet != null
                     && !resultSet.isClosed()) {
@@ -71,8 +73,8 @@ public class JdbcUtils {
             if (statement != null
                     && statement.isClosed())
                 statement.close();
-        } catch (SQLException e){
-            e.printStackTrace();
+        } catch (SQLException e) {
+            throw new DbException("Could not close resultSet or statement.");
         }
     }
 
