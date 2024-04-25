@@ -10,5 +10,4 @@ public interface CommonDao<T, I>{
     void delete(I id);
     Boolean exists(I id);
     List<T> findAll();
-
 }

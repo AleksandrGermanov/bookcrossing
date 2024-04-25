@@ -1,8 +1,6 @@
 package util.jdbc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class JdbcUtils {
 
@@ -62,6 +60,20 @@ public class JdbcUtils {
             }
         }
         return value;
+    }
+
+    public static void tryClose(ResultSet resultSet, Statement statement){
+        try {
+            if (resultSet != null
+                    && !resultSet.isClosed()) {
+                resultSet.close();
+            }
+            if (statement != null
+                    && statement.isClosed())
+                statement.close();
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

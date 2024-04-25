@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class BookRequest {
 
     private Long id;
-    private User requester;
-    private Book book;
+    private Long requester_id;
+    private Long book_id;
     private LocalDateTime createdOn;
 }

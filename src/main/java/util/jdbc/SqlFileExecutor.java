@@ -1,5 +1,8 @@
 package util.jdbc;
 
+import exception.DbException;
+import exception.notfound.SqlFileExecutionException;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,25 +13,28 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SqlFileExecutor {
+    private final Path deafultPath = Path.of(System.getProperty("user.dir"),"src/main/resources", "schema.sql");
 
-    public static void executeSchema(){
+    public void executeSchema(){
+        executeSchema(deafultPath);
+    }
+
+    public void executeSchema(Path path){
     try(Stream<String> queryStream = Files.lines(
-            Path.of(System.getProperty("user.dir"),"src/main/resources", "schema.sql"),
+            path,
             StandardCharsets.UTF_8)){
         JdbcUtils.inTransactionRun((prepareRunnable(queryStream.collect(Collectors.joining()))));
     }catch (IOException e){
-        System.out.println("reading from schema.sql failed");
-        e.printStackTrace();
+        throw new SqlFileExecutionException("Reading from schema.sql failed.");
     }
     }
 
-    private static InConnectionRunnable prepareRunnable(String query){
+    private InConnectionRunnable prepareRunnable(String query){
         return connection -> {
             try (Statement statement = connection.createStatement()){
                 statement.execute(query);
             } catch (SQLException e){
-                System.out.println("sql ex");
-                e.printStackTrace();
+                throw new DbException("Execution of schema.sql failed.");
             }
         };
     }
