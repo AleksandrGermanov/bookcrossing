@@ -19,7 +19,7 @@ public class UserDaoJdbcImpl implements UserDao {
 
     @Override
     public User create(User user) {
-        InConnectionSupplier<User> userCreate = connection -> {
+        InConnectionSupplier<Long> userCreate = connection -> {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
@@ -30,8 +30,7 @@ public class UserDaoJdbcImpl implements UserDao {
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
-                    Long generatedId = resultSet.getLong(1);
-                    return obtain(generatedId).orElseThrow(()-> new UserNotFoundException(generatedId));
+                    return resultSet.getLong(1);
                 }
             } catch (SQLException e) {
                 throw new DbException("User creation failed.");
@@ -41,24 +40,25 @@ public class UserDaoJdbcImpl implements UserDao {
             return null;
         };
 
-        return JdbcUtils.inTransactionGet(userCreate);
+        Long generatedId = JdbcUtils.inTransactionGet(userCreate);
+        return obtain(generatedId).orElseThrow(() -> new UserNotFoundException(generatedId));
     }
 
     @Override
     public User update(User user) {
-        InConnectionSupplier<User> userUpdate = connection -> {
+        InConnectionRunnable userUpdate = connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.USER_UPSERT)) {
                 preparedStatement.setLong(1, user.getId());
                 preparedStatement.setString(2, user.getName());
                 preparedStatement.setString(3, user.getEmail());
                 preparedStatement.executeUpdate();
-                return obtain(user.getId()).orElseThrow(()-> new UserNotFoundException(user.getId()));
             } catch (SQLException e) {
                 throw new DbException("User update failed.");
             }
         };
 
-        return JdbcUtils.inTransactionGet(userUpdate);
+        JdbcUtils.inTransactionRun(userUpdate);
+        return obtain(user.getId()).orElseThrow(() -> new UserNotFoundException(user.getId()));
     }
 
     @Override

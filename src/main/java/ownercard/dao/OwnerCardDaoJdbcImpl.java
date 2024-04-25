@@ -6,6 +6,7 @@ import exception.DbException;
 import exception.notfound.OwnerCardNotFoundException;
 import ownercard.model.OwnerCard;
 import user.dao.UserLazyInitProxy;
+import util.jdbc.InConnectionRunnable;
 import util.jdbc.InConnectionSupplier;
 import util.jdbc.JdbcUtils;
 
@@ -16,7 +17,7 @@ import java.util.Optional;
 public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
     @Override
     public OwnerCard create(OwnerCard ownerCard) {
-        InConnectionSupplier<OwnerCard> cardCreate = connection -> {
+        InConnectionSupplier<Long> cardCreate = connection -> {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
@@ -29,8 +30,7 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
-                    Long generatedId = resultSet.getLong(1);
-                    return obtain(generatedId).orElseThrow(() -> new OwnerCardNotFoundException(generatedId));
+                    return resultSet.getLong(1);
                 }
             } catch (SQLException e) {
                 throw new DbException("OwnerCard creation failed.");
@@ -40,12 +40,13 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
             return null;
         };
 
-        return JdbcUtils.inTransactionGet(cardCreate);
+        Long generatedId = JdbcUtils.inTransactionGet(cardCreate);
+        return obtain(generatedId).orElseThrow(() -> new OwnerCardNotFoundException(generatedId));
     }
 
     @Override
     public OwnerCard update(OwnerCard ownerCard) {
-        InConnectionSupplier<OwnerCard> cardUpdate = connection -> {
+        InConnectionRunnable cardUpdate = connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.CARD_UPSERT)) {
                 preparedStatement.setLong(1, ownerCard.getId());
                 preparedStatement.setLong(2, ownerCard.getOwner().getId());
@@ -53,15 +54,14 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 preparedStatement.setTimestamp(4, Timestamp.valueOf(ownerCard.getOwnedSince()));
                 preparedStatement.setTimestamp(5, Timestamp.valueOf(ownerCard.getOwnedTill()));
                 preparedStatement.executeUpdate();
-                return obtain(ownerCard.getId())
-                        .orElseThrow(() -> new OwnerCardNotFoundException(ownerCard.getId()));
-
             } catch (SQLException e) {
                 throw new DbException("OwnerCard update failed.");
             }
         };
 
-        return JdbcUtils.inTransactionGet(cardUpdate);
+        JdbcUtils.inTransactionRun(cardUpdate);
+        return obtain(ownerCard.getId())
+                .orElseThrow(() -> new OwnerCardNotFoundException(ownerCard.getId()));
     }
 
     @Override

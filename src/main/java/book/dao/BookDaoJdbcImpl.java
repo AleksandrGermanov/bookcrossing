@@ -19,7 +19,7 @@ import java.util.*;
 public class BookDaoJdbcImpl implements BookDao {
     @Override
     public Book create(Book book) {
-        InConnectionSupplier<Book> bookCreate = connection -> {
+        InConnectionSupplier<Long> bookCreate = connection -> {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
@@ -32,8 +32,7 @@ public class BookDaoJdbcImpl implements BookDao {
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
-                    Long generatedId = resultSet.getLong(1);
-                    return obtain(generatedId).orElseThrow(() -> new BookNotFoundException(generatedId));
+                    return resultSet.getLong(1);
                 }
             } catch (SQLException e) {
                 throw new DbException("Book creation failed.");
@@ -43,13 +42,14 @@ public class BookDaoJdbcImpl implements BookDao {
             return null;
         };
 
-        return JdbcUtils.inTransactionGet(bookCreate);
+        Long generatedId = JdbcUtils.inTransactionGet(bookCreate);
+        return obtain(generatedId).orElseThrow(()-> new BookNotFoundException(generatedId));
     }
 
 
     @Override
     public Book update(Book book) {
-        InConnectionSupplier<Book> bookUpdate = connection -> {
+        InConnectionRunnable bookUpdate = connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.BOOK_UPSERT)) {
                 preparedStatement.setLong(1, book.getId());
                 preparedStatement.setString(2, book.getTitle());
@@ -57,13 +57,13 @@ public class BookDaoJdbcImpl implements BookDao {
                 preparedStatement.setInt(4, book.getPublicationYear());
                 preparedStatement.setBoolean(5, book.getIsAvailable());
                 preparedStatement.executeUpdate();
-                return obtain(book.getId()).orElseThrow(() -> new BookNotFoundException(book.getId()));
             } catch (SQLException e) {
                 throw new DbException("Book update failed.");
             }
         };
 
-        return JdbcUtils.inTransactionGet(bookUpdate);
+        JdbcUtils.inTransactionRun(bookUpdate);
+        return obtain(book.getId()).orElseThrow(()-> new BookNotFoundException(book.getId()));
     }
 
     @Override
