@@ -23,17 +23,17 @@ public class UserDaoJdbcImpl implements UserDao {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
-                preparedStatement = connection.prepareStatement(QueryPool.USER_UPSERT, Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setLong(1, user.getId());
-                preparedStatement.setString(2, user.getName());
-                preparedStatement.setString(3, user.getEmail());
+                preparedStatement = connection.prepareStatement(QueryPool.USER_INSERT, Statement.RETURN_GENERATED_KEYS);
+                preparedStatement.setString(1, user.getName());
+                preparedStatement.setString(2, user.getEmail());
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
                     return resultSet.getLong(1);
                 }
             } catch (SQLException e) {
-                throw new DbException("User creation failed.");
+                throw new DbException(String.format("User creation failed due to %s with message %s."
+                        , e.getClass(), e.getMessage()));
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
@@ -47,13 +47,14 @@ public class UserDaoJdbcImpl implements UserDao {
     @Override
     public User update(User user) {
         InConnectionRunnable userUpdate = connection -> {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.USER_UPSERT)) {
-                preparedStatement.setLong(1, user.getId());
-                preparedStatement.setString(2, user.getName());
-                preparedStatement.setString(3, user.getEmail());
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.USER_UPDATE)) {
+                preparedStatement.setString(1, user.getName());
+                preparedStatement.setString(2, user.getEmail());
+                preparedStatement.setLong(3, user.getId());
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
-                throw new DbException("User update failed.");
+                throw new DbException(String.format("User update failed due to %s with message %s."
+                        , e.getClass(), e.getMessage()));
             }
         };
 
@@ -104,12 +105,15 @@ public class UserDaoJdbcImpl implements UserDao {
                 preparedStatement = connection.prepareStatement(QueryPool.USER_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                return resultSet.next();
+                if (resultSet.next()){
+                    return resultSet.getBoolean(1);
+                };
             } catch (SQLException e) {
                 throw new DbException("User existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
+            return null;
         };
 
         return JdbcUtils.inTransactionGet(userExists);
@@ -136,11 +140,13 @@ public class UserDaoJdbcImpl implements UserDao {
 
 
     private static class QueryPool {
-        private static final String USER_UPSERT = "MERGE INTO users(id, name, email) VALUES (?,?,?);";
+        private static final String USER_INSERT = "INSERT INTO users(name, email) VALUES (?,?);";
+        private static final String USER_UPDATE = "UPDATE users "
+                + "SET name = ?, email = ? "
+                + "WHERE id = ?;";
         private static final String USER_SELECT_BY_ID = "SELECT "
                 + "u.id u_id, u.name u_name, u.email u_email, "
-                + "b.id b_id, b.title b_title, b.author b_author, "
-                + "b.publication_year b_year, b.is_available b_available, "
+                + "oc.book_id oc_book_id, "
                 + "br_from.id br_from_id, "
                 + "br_to.id br_to_id "
                 + "FROM users u "
@@ -159,9 +165,8 @@ public class UserDaoJdbcImpl implements UserDao {
                 + "br_to.id br_to_id "
                 + "FROM users u "
                 + "LEFT JOIN owner_cards oc ON oc.owner_id = u.id "
-                + "LEFT JOIN books b ON b.id = oc.book_id "
                 + "LEFT JOIN book_requests br_from ON br_from.requester_id = u.id "
-                + "LEFT JOIN book_requests br_to ON br_to.book_id = b.id "
+                + "LEFT JOIN book_requests br_to ON br_to.book_id = oc.book_id "
                 + "WHERE oc.owned_till IS NULL "
                 + "ORDER BY u.id, oc.owned_since, br_from.created_on, br_to.created_on;";
     }
@@ -196,8 +201,7 @@ public class UserDaoJdbcImpl implements UserDao {
             while (resultSet.next()) {
                 if (user.getId() != null
                         && !user.getId().equals(resultSet.getLong("u_id"))) {
-                    mergeIntoUser(user, booksOwned, requestsFrom, requestsTo);
-                    users.add(user);
+                    addUser(user, booksOwned, requestsFrom, requestsTo, users);
                     user = new User();
                     booksOwned.clear();
                     requestsFrom.clear();
@@ -208,9 +212,14 @@ public class UserDaoJdbcImpl implements UserDao {
                 addRequest(requestsFrom, "br_from_id", resultSet);
                 addRequest(requestsTo, "br_to_id", resultSet);
             }
-            mergeIntoUser(user, booksOwned, requestsFrom, requestsTo);
+            addUser(user, booksOwned, requestsFrom, requestsTo, users);
 
             return users;
+        }
+
+        private static void addUser(User user, Map<Long, Book> booksOwned, Set<Long> requestsFrom, Set<Long> requestsTo, List<User> users) {
+            mergeIntoUser(user, booksOwned, requestsFrom, requestsTo);
+            users.add(user);
         }
 
         private static void mergeIntoUser(User user,

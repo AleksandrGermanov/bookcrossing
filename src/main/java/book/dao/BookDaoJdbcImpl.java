@@ -23,12 +23,11 @@ public class BookDaoJdbcImpl implements BookDao {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
-                preparedStatement = connection.prepareStatement(QueryPool.BOOK_UPSERT, Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setLong(1, book.getId());
-                preparedStatement.setString(2, book.getTitle());
-                preparedStatement.setString(3, book.getAuthor());
-                preparedStatement.setInt(4, book.getPublicationYear());
-                preparedStatement.setBoolean(5, book.getIsAvailable());
+                preparedStatement = connection.prepareStatement(QueryPool.BOOK_INSERT, Statement.RETURN_GENERATED_KEYS);
+                preparedStatement.setString(1, book.getTitle());
+                preparedStatement.setString(2, book.getAuthor());
+                preparedStatement.setInt(3, book.getPublicationYear());
+                preparedStatement.setBoolean(4, book.getIsAvailable());
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
@@ -43,19 +42,19 @@ public class BookDaoJdbcImpl implements BookDao {
         };
 
         Long generatedId = JdbcUtils.inTransactionGet(bookCreate);
-        return obtain(generatedId).orElseThrow(()-> new BookNotFoundException(generatedId));
+        return obtain(generatedId).orElseThrow(() -> new BookNotFoundException(generatedId));
     }
 
 
     @Override
     public Book update(Book book) {
         InConnectionRunnable bookUpdate = connection -> {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.BOOK_UPSERT)) {
-                preparedStatement.setLong(1, book.getId());
-                preparedStatement.setString(2, book.getTitle());
-                preparedStatement.setString(3, book.getAuthor());
-                preparedStatement.setInt(4, book.getPublicationYear());
-                preparedStatement.setBoolean(5, book.getIsAvailable());
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.BOOK_UPDATE)) {
+                preparedStatement.setString(1, book.getTitle());
+                preparedStatement.setString(2, book.getAuthor());
+                preparedStatement.setInt(3, book.getPublicationYear());
+                preparedStatement.setBoolean(4, book.getIsAvailable());
+                preparedStatement.setLong(5, book.getId());
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
                 throw new DbException("Book update failed.");
@@ -63,7 +62,7 @@ public class BookDaoJdbcImpl implements BookDao {
         };
 
         JdbcUtils.inTransactionRun(bookUpdate);
-        return obtain(book.getId()).orElseThrow(()-> new BookNotFoundException(book.getId()));
+        return obtain(book.getId()).orElseThrow(() -> new BookNotFoundException(book.getId()));
     }
 
     @Override
@@ -109,12 +108,15 @@ public class BookDaoJdbcImpl implements BookDao {
                 preparedStatement = connection.prepareStatement(QueryPool.BOOK_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                return resultSet.next();
+                if (resultSet.next()) {
+                    return resultSet.getBoolean(1);
+                }
             } catch (SQLException e) {
                 throw new DbException("Book existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
+            return null;
         };
 
         return JdbcUtils.inTransactionGet(bookExists);
@@ -122,7 +124,7 @@ public class BookDaoJdbcImpl implements BookDao {
 
     @Override
     public List<Book> findAll() {
-        return searchByParams(null, null);
+        return searchByParams(new LinkedHashMap<>(), null);
     }
 
     public List<Book> searchByParams(LinkedHashMap<String, String> params, BookFetchOrder order) {
@@ -136,7 +138,8 @@ public class BookDaoJdbcImpl implements BookDao {
                 resultSet = preparedStatement.executeQuery();
                 return RowMapper.mapResultList(resultSet);
             } catch (SQLException e) {
-                throw new DbException("Book search operation failed.");
+                throw new DbException(String.format("Book search failed due to %s with message %s."
+                        , e.getClass(), e.getMessage()));
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
@@ -169,9 +172,12 @@ public class BookDaoJdbcImpl implements BookDao {
                 + "LEFT JOIN owner_cards oc ON b.id = oc.book_id "
                 + "WHERE b.id = ? "
                 + "ORDER BY oc.owned_since;";
-        private static final String BOOK_UPSERT = "MERGE INTO books(id, title, author, "
+        private static final String BOOK_INSERT = "INSERT INTO books(title, author, "
                 + "publication_year, is_available) "
-                + "VALUES(?,?,?,?,?);";
+                + "VALUES(?,?,?,?);";
+        private static final String BOOK_UPDATE = "UPDATE books "
+                + "SET  title = ?, author = ?, publication_year = ?, is_available = ? "
+                + "WHERE id = ?;";
         private static final String BOOK_DELETE = "DELETE FROM books WHERE id = ?;";
         private static final String BOOK_EXISTS = "SELECT EXISTS(SELECT 1 FROM books WHERE id = ?);";
 
@@ -184,16 +190,16 @@ public class BookDaoJdbcImpl implements BookDao {
                     + "b.*, oc.owner_id u_id "
                     + "FROM books b "
                     + "LEFT JOIN owner_cards oc ON b.id = oc.book_id ";
-            private static final String TITLE_SEARCH = "title LIKE ? ";
-            private static final String AUTHOR_SEARCH = "author LIKE ? ";
+            private static final String TITLE_SEARCH = "UPPER (title) LIKE UPPER (?) ";
+            private static final String AUTHOR_SEARCH = "UPPER (author) LIKE UPPER (?) ";
             private static final String PUBLICATION_YEAR_SEARCH = "publication_year >= ? ";
-            private static final String IS_AVAILABLE_SEARCH = "is_available = TRUE ";
+            private static final String IS_AVAILABLE_SEARCH = "is_available = ? ";
             private static final String WHERE = "WHERE ";
             private static final String AND = "AND ";
             private static final String ORDER_BY = "ORDER BY ";
             private static final String PUBLICATION_YEAR_DESC = "publication_year DESC, ";
             private static final String IS_AVAILABLE_DESC = "is_available DESC, ";
-            private static final String ID_AND_OWNED_SINCE = "id, owned since; ";
+            private static final String ID_AND_OWNED_SINCE = "id, owned_since; ";
 
             private StringBuilder currentSearch;
             private boolean isParametrized;
@@ -294,7 +300,7 @@ public class BookDaoJdbcImpl implements BookDao {
 
             while (resultSet.next()) {
                 if (book.getId() != null
-                        && book.getId().equals(resultSet.getLong("id"))) {
+                        && !book.getId().equals(resultSet.getLong("id"))) {
                     book.setOwnedBy(new ArrayList<>(ownedBy.values()));
                     books.add(book);
                     book = new Book();
@@ -304,6 +310,7 @@ public class BookDaoJdbcImpl implements BookDao {
                 addOwnedBy(ownedBy, resultSet);
             }
             book.setOwnedBy(new ArrayList<>(ownedBy.values()));
+            books.add(book);
 
             return books;
         }
