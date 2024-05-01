@@ -71,12 +71,14 @@ class BookDaoJdbcImplTest {
     }
 
     @Test
-    void existsWhenUserNotFoundReturnsFalse() {
+    void existsWhenBookNotFoundReturnsFalse() {
         assertFalse(bookDao.exists(1L));
     }
-        @Test
-        void existsWhenUserFoundReturnsTrue() {
+
+    @Test
+    void existsWhenBookFoundReturnsTrue() {
         Book created = bookDao.create(b1);
+
         assertTrue(bookDao.exists(created.getId()));
     }
 
@@ -86,13 +88,13 @@ class BookDaoJdbcImplTest {
         Book created2 = bookDao.create(b2);
         Book created3 = bookDao.create(b3);
 
-        assertEquals(List.of(created1,created2,created3), bookDao.findAll());
+        assertEquals(List.of(created1, created2, created3), bookDao.findAll());
     }
 
     @Test
-    void searchByParamsWhenAllParamsReturnsList () {
-        Book created1 = bookDao.create(b1);
-        Book created2 = bookDao.create(b2);
+    void searchByParamsWhenAllParamsReturnsList() {
+        bookDao.create(b1);
+        bookDao.create(b2);
         Book created3 = bookDao.create(b3);
 
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
@@ -105,8 +107,8 @@ class BookDaoJdbcImplTest {
     }
 
     @Test
-    void searchByParamsWhenOneParamReturnsList () {
-        Book created1 = bookDao.create(b1);
+    void searchByParamsWhenOneParamReturnsList() {
+        bookDao.create(b1);
         Book created2 = bookDao.create(b2);
         Book created3 = bookDao.create(b3);
 
@@ -125,7 +127,7 @@ class BookDaoJdbcImplTest {
 
         assertEquals(List.of(created1, created2, created3),
                 bookDao.searchByParams(emptyMap, BookFetchOrder.DEFAULT));
-        assertEquals(List.of(created1,  created3, created2),
+        assertEquals(List.of(created1, created3, created2),
                 bookDao.searchByParams(emptyMap, BookFetchOrder.IS_AVAILABLE_DESC));
         assertEquals(List.of(created3, created1, created2),
                 bookDao.searchByParams(emptyMap, BookFetchOrder.PUBLICATION_YEAR_DESC));

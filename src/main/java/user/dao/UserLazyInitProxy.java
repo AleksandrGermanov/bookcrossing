@@ -37,9 +37,9 @@ public class UserLazyInitProxy extends User {
     }
 
     @Override
-    public List<Book> getBooksOwned() {
+    public List<Book> getBooksInPossession() {
         initUser();
-        return user.getBooksOwned();
+        return user.getBooksInPossession();
     }
 
     @Override
@@ -52,6 +52,11 @@ public class UserLazyInitProxy extends User {
     public List<Long> getRequestsTo() {
         initUser();
         return user.getRequestsTo();
+    }
+
+    public User getUser(){
+        initUser();
+        return user;
     }
 
     private void initUser() {
@@ -83,6 +88,6 @@ public class UserLazyInitProxy extends User {
     @Override
     public int hashCode() {
         initUser();
-        return Objects.hash(super.hashCode(), id, userDao, user);
+        return user.hashCode();
     }
 }

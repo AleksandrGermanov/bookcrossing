@@ -1,16 +1,15 @@
 package user.model;
 
 import book.model.Book;
-import bookrequest.model.BookRequest;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -22,8 +21,11 @@ public class User {
     private String name;
     @Email
     private String email;
-    private List<Book> booksOwned;
+    @EqualsAndHashCode.Exclude
+    private List<Book> booksInPossession;
+    @EqualsAndHashCode.Exclude
     private List<Long> requestsFrom;
+    @EqualsAndHashCode.Exclude
     private List<Long> requestsTo;
 
     public User(Long id, String name, String email) {

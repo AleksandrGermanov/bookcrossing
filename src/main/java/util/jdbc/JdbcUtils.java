@@ -33,9 +33,9 @@ public class JdbcUtils {
         PropertiesReader reader = propertiesPath != null
                 ? new PropertiesReader(propertiesPath)
                 : new PropertiesReader();
-        url = reader.getProperty("db.url");
-        user = reader.getProperty("db.user");
-        password = reader.getProperty("db.password");
+        url = reader.getProperty(PropertiesReader.DB_URL);
+        user = reader.getProperty(PropertiesReader.DB_USER);
+        password = reader.getProperty(PropertiesReader.DB_PASSWORD);
     }
 
     private static Connection getConnection() {
@@ -77,11 +77,11 @@ public class JdbcUtils {
         if (connection == null) {
             return null;
         }
-        T value = null;
+        T value;
 
         try {
-            connection.setAutoCommit(false);
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            connection.setAutoCommit(false);
             value = supplier.get(connection);
             connection.commit();
         } catch (SQLException | DbException e) {
@@ -93,6 +93,7 @@ public class JdbcUtils {
                 throw new DbException("Rollback failed.");
             }
         }
+
         return value;
     }
 
@@ -141,7 +142,8 @@ public class JdbcUtils {
             String prop = properties.stream()
                     .filter(s -> s.startsWith(propertyName))
                     .findFirst()
-                    .orElseThrow(() -> new BookcrossingIOException("Cannot find 'db.url'."));
+                    .orElseThrow(() -> new BookcrossingIOException(
+                            String.format("Cannot find property = %s.", propertyName)));
 
             return prop.substring(prop.indexOf('=') + 1).trim();
         }

@@ -11,6 +11,8 @@ import util.jdbc.InConnectionSupplier;
 import util.jdbc.JdbcUtils;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,12 +23,10 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
-                preparedStatement = connection.prepareStatement(QueryPool.CARD_UPSERT, Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setLong(1, ownerCard.getId());
-                preparedStatement.setLong(2, ownerCard.getOwner().getId());
-                preparedStatement.setLong(3, ownerCard.getBook().getId());
-                preparedStatement.setTimestamp(4, Timestamp.valueOf(ownerCard.getOwnedSince()));
-                preparedStatement.setTimestamp(5, Timestamp.valueOf(ownerCard.getOwnedTill()));
+                preparedStatement = connection.prepareStatement(QueryPool.CARD_INSERT, Statement.RETURN_GENERATED_KEYS);
+                preparedStatement.setLong(1, ownerCard.getOwner().getId());
+                preparedStatement.setLong(2, ownerCard.getBook().getId());
+                preparedStatement.setTimestamp(3, Timestamp.valueOf(ownerCard.getOwnedSince()));
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
@@ -47,12 +47,12 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
     @Override
     public OwnerCard update(OwnerCard ownerCard) {
         InConnectionRunnable cardUpdate = connection -> {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.CARD_UPSERT)) {
-                preparedStatement.setLong(1, ownerCard.getId());
-                preparedStatement.setLong(2, ownerCard.getOwner().getId());
-                preparedStatement.setLong(3, ownerCard.getBook().getId());
-                preparedStatement.setTimestamp(4, Timestamp.valueOf(ownerCard.getOwnedSince()));
-                preparedStatement.setTimestamp(5, Timestamp.valueOf(ownerCard.getOwnedTill()));
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.CARD_UPDATE)) {
+                preparedStatement.setLong(1, ownerCard.getOwner().getId());
+                preparedStatement.setLong(2, ownerCard.getBook().getId());
+                preparedStatement.setTimestamp(3, Timestamp.valueOf(ownerCard.getOwnedSince()));
+                preparedStatement.setTimestamp(4, Timestamp.valueOf(ownerCard.getOwnedTill()));
+                preparedStatement.setLong(5, ownerCard.getId());
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
                 throw new DbException("OwnerCard update failed.");
@@ -86,7 +86,7 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
 
     @Override
     public void delete(Long id) {
-        throw new BookcrossingException("Delete is not implemented for ownerCard entity.");
+        //Implementation is not supposed, method does nothing according to LSP;
     }
 
     @Override
@@ -98,12 +98,15 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 preparedStatement = connection.prepareStatement(QueryPool.CARD_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                return resultSet.next();
+                if (resultSet.next()){
+                    return resultSet.getBoolean(1);
+                };
             } catch (SQLException e) {
                 throw new DbException("OwnerCard existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
+            return null;
         };
 
         return JdbcUtils.inTransactionGet(cardExists);
@@ -111,16 +114,21 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
 
     @Override
     public List<OwnerCard> findAll() {
-        throw new BookcrossingException("FindAll is not implemented for ownerCard entity.");
+        //Implementation is not supposed, returns empty list according to LSP;
+        return Collections.emptyList();
     }
 
     private static class QueryPool {
+        private static final String CARD_INSERT = "INSERT INTO owner_cards(owner_id, book_id, "
+                + "owned_since) "
+                + "VALUES (?,?,?)";
+        private static final String CARD_UPDATE = "UPDATE owner_cards "
+                +"SET owner_id = ?, book_id = ?, owned_since = ?, owned_till = ? "
+                +"WHERE id = ?";
         private static final String CARD_SELECT_BY_ID = "SELECT * "
                 + "FROM owner_cards "
                 + "WHERE id = ? ";
-        private static final String CARD_UPSERT = "MERGE INTO owner_cards(id, owner_id, book_id, "
-                + "owned_since, owned_till) "
-                + "VALUES (?,?,?,?,?)";
+
         private static final String CARD_EXISTS = "SELECT EXISTS(SELECT 1 FROM owner_cards WHERE id = ?);";
     }
 
@@ -132,7 +140,10 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 ownerCard.setOwner(new UserLazyInitProxy(resultSet.getLong("owner_id")));
                 ownerCard.setBook(new BookLazyInitProxy(resultSet.getLong("book_id")));
                 ownerCard.setOwnedSince(resultSet.getTimestamp("owned_since").toLocalDateTime());
-                ownerCard.setOwnedTill(resultSet.getTimestamp("owned_till").toLocalDateTime());
+                LocalDateTime till = resultSet.getTimestamp("owned_till") != null
+                        ? resultSet.getTimestamp("owned_till").toLocalDateTime()
+                        : null;
+                ownerCard.setOwnedTill(till);
             }
             return ownerCard.getId() != null
                     ? ownerCard

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import user.model.User;
 
@@ -25,6 +26,7 @@ public class Book {
     private Integer publicationYear;
     @NotNull
     private Boolean isAvailable;
+    @EqualsAndHashCode.Exclude
     private List<User> ownedBy;
 
 
@@ -34,5 +36,20 @@ public class Book {
         this.author = author;
         this.publicationYear = publicationYear;
         this.isAvailable = isAvailable;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", author='" + author + '\'' +
+                ", publicationYear=" + publicationYear +
+                ", isAvailable=" + isAvailable +
+                ", ownedBy=" + ownedBy.stream() //recursion: book <=> user
+                .map(User::getId)
+                .toList() +
+                '}';
     }
 }

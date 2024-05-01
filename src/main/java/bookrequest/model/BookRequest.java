@@ -20,4 +20,10 @@ public class BookRequest {
     private Book book;
     @NotNull
     private LocalDateTime createdOn;
+
+    public BookRequest(User requester, Book book) {
+        this.requester = requester;
+        this.book = book;
+        createdOn = LocalDateTime.now();
+    }
 }

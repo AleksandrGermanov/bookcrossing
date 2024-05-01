@@ -105,9 +105,10 @@ public class UserDaoJdbcImpl implements UserDao {
                 preparedStatement = connection.prepareStatement(QueryPool.USER_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                if (resultSet.next()){
+                if (resultSet.next()) {
                     return resultSet.getBoolean(1);
-                };
+                }
+                ;
             } catch (SQLException e) {
                 throw new DbException("User existence check failed.");
             } finally {
@@ -150,11 +151,13 @@ public class UserDaoJdbcImpl implements UserDao {
                 + "br_from.id br_from_id, "
                 + "br_to.id br_to_id "
                 + "FROM users u "
-                + "LEFT JOIN owner_cards oc ON oc.owner_id = u.id "
+                + "LEFT JOIN (SELECT book_id, owner_id, owned_since "
+                + "FROM owner_cards "
+                + "WHERE owned_till IS NULL) oc "
+                + "ON oc.owner_id = u.id "
                 + "LEFT JOIN book_requests br_from ON br_from.requester_id = u.id "
                 + "LEFT JOIN book_requests br_to ON br_to.book_id = oc.book_id "
                 + "WHERE u.id = ? "
-                + "AND oc.owned_till IS NULL "
                 + "ORDER BY oc.owned_since, br_from.created_on, br_to.created_on;";
         private static final String USER_DELETE = "DELETE FROM users WHERE id = ?;";
         private static final String USER_EXISTS = "SELECT EXISTS(SELECT 1 FROM users WHERE id = ?);";
@@ -212,7 +215,9 @@ public class UserDaoJdbcImpl implements UserDao {
                 addRequest(requestsFrom, "br_from_id", resultSet);
                 addRequest(requestsTo, "br_to_id", resultSet);
             }
-            addUser(user, booksOwned, requestsFrom, requestsTo, users);
+            if (user.getId() != null) {
+                addUser(user, booksOwned, requestsFrom, requestsTo, users);
+            }
 
             return users;
         }
@@ -226,7 +231,7 @@ public class UserDaoJdbcImpl implements UserDao {
                                           Map<Long, Book> booksOwned,
                                           Set<Long> requestsFrom,
                                           Set<Long> requestsTo) {
-            user.setBooksOwned(new ArrayList<>(booksOwned.values()));
+            user.setBooksInPossession(new ArrayList<>(booksOwned.values()));
             user.setRequestsFrom(new ArrayList<>(requestsFrom));
             user.setRequestsTo(new ArrayList<>(requestsTo));
         }

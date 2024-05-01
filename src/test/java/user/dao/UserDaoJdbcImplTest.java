@@ -38,7 +38,7 @@ class UserDaoJdbcImplTest {
     void create() {
         User fetched = userDao.create(one);
 
-        assertTrue(fetched.getId()>0);
+        assertEquals(1, (long) fetched.getId());
         assertEquals(one.getName(), fetched.getName());
         assertEquals(one.getEmail(), fetched.getEmail());
     }

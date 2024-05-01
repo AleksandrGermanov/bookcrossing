@@ -80,6 +80,6 @@ public class BookLazyInitProxy extends Book {
     @Override
     public int hashCode() {
         initBook();
-        return Objects.hash(super.hashCode(), id, bookDao, book);
+        return book.hashCode();
     }
 }

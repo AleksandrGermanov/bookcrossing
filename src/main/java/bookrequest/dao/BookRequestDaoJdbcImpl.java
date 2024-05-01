@@ -2,7 +2,6 @@ package bookrequest.dao;
 
 import book.dao.BookLazyInitProxy;
 import bookrequest.model.BookRequest;
-import exception.BookcrossingException;
 import exception.DbException;
 import exception.notfound.BookRequestNotFoundException;
 import user.dao.UserLazyInitProxy;
@@ -11,6 +10,7 @@ import util.jdbc.InConnectionSupplier;
 import util.jdbc.JdbcUtils;
 
 import java.sql.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,18 +21,18 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
             PreparedStatement preparedStatement = null;
             ResultSet resultSet = null;
             try {
-                preparedStatement = connection.prepareStatement(QueryPool.REQUEST_UPSERT, Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setLong(1, bookRequest.getId());
-                preparedStatement.setLong(2, bookRequest.getRequester().getId());
-                preparedStatement.setLong(3, bookRequest.getBook().getId());
-                preparedStatement.setTimestamp(4, Timestamp.valueOf(bookRequest.getCreatedOn()));
+                preparedStatement = connection.prepareStatement(QueryPool.REQUEST_INSERT, Statement.RETURN_GENERATED_KEYS);
+                preparedStatement.setLong(1, bookRequest.getRequester().getId());
+                preparedStatement.setLong(2, bookRequest.getBook().getId());
+                preparedStatement.setTimestamp(3, Timestamp.valueOf(bookRequest.getCreatedOn()));
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
                 if (resultSet.next()) {
                     return resultSet.getLong(1);
                 }
             } catch (SQLException e) {
-                throw new DbException("BookRequest creation failed.");
+                throw new DbException(String.format("BookRequest creation failed due to %s with message %s."
+                        , e.getClass(), e.getMessage()));
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
@@ -46,11 +46,11 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
     @Override
     public BookRequest update(BookRequest bookRequest) {
         InConnectionRunnable requestUpdate = connection -> {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.REQUEST_UPSERT)) {
-                preparedStatement.setLong(1, bookRequest.getId());
-                preparedStatement.setLong(2, bookRequest.getRequester().getId());
-                preparedStatement.setLong(3, bookRequest.getBook().getId());
-                preparedStatement.setTimestamp(4, Timestamp.valueOf(bookRequest.getCreatedOn()));
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.REQUEST_UPDATE)) {
+                preparedStatement.setLong(1, bookRequest.getRequester().getId());
+                preparedStatement.setLong(2, bookRequest.getBook().getId());
+                preparedStatement.setTimestamp(3, Timestamp.valueOf(bookRequest.getCreatedOn()));
+                preparedStatement.setLong(4, bookRequest.getId());
                 preparedStatement.executeUpdate();
 
             } catch (SQLException e) {
@@ -106,12 +106,15 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
                 preparedStatement = connection.prepareStatement(QueryPool.REQUEST_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                return resultSet.next();
+                if(resultSet.next()){
+                    return resultSet.getBoolean(1);
+                };
             } catch (SQLException e) {
                 throw new DbException("Book existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }
+            return null;
         };
 
         return JdbcUtils.inTransactionGet(requestExists);
@@ -119,16 +122,20 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
 
     @Override
     public List<BookRequest> findAll() {
-        throw new BookcrossingException("FindAll is not implemented for bookRequest entity.");
+        //Implementation is not supposed, returns empty list according to LSP;
+        return Collections.emptyList();
     }
 
     private static class QueryPool {
-        private static final String REQUEST_UPSERT = "MERGE INTO book_requests(id, "
+        private static final String REQUEST_INSERT = "INSERT INTO book_requests("
                 + "requester_id, book_id, created_on) "
-                + "VALUES (?,?,?,?);";
-        private static final String REQUEST_SELECT_BY_ID = "MERGE INTO book_requests(id, "
-                + "requester_id, book_id, created_on) "
-                + "VALUES (?,?,?,?);";
+                + "VALUES (?,?,?);";
+        private static final String REQUEST_UPDATE = "UPDATE book_requests "
+                + "SET requester_id = ?, book_id = ?, created_on = ? "
+                + "WHERE id = ?;";
+        private static final String REQUEST_SELECT_BY_ID = "SELECT * "
+            + "FROM book_requests "
+            + "WHERE id = ?";
         private static final String REQUEST_DELETE = "DELETE FROM book_requests "
                 + " WHERE id = ?;";
         private static final String REQUEST_EXISTS = "SELECT EXISTS(SELECT 1 "
