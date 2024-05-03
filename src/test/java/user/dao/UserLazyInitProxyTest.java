@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import user.model.User;
-import util.beanlib.dao.DaoLib;
+import util.beanlib.DaoLib;
 import util.jdbc.JdbcUtils;
 import util.jdbc.SqlFileExecutor;
 

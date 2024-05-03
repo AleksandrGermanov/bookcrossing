@@ -1,4 +1,4 @@
-package util.beanlib.dao;
+package util.beanlib;
 
 import book.dao.BookDao;
 import book.dao.BookDaoJdbcImpl;

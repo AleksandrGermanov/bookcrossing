@@ -3,7 +3,7 @@ package book.dao;
 import book.model.Book;
 import exception.notfound.BookNotFoundException;
 import user.model.User;
-import util.beanlib.dao.DaoLib;
+import util.beanlib.DaoLib;
 
 import java.util.List;
 import java.util.Objects;

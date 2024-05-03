@@ -6,7 +6,9 @@
 
     <groupId>ru.astondevs.trainee</groupId>
     <artifactId>bookcrossing</artifactId>
+    <packaging>jar</packaging>
     <version>0.1-SNAPSHOT</version>
+
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -14,6 +16,10 @@
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <lombok.version>1.18.30</lombok.version>
         <postgresql.version>42.3.8</postgresql.version>
+        <servlet-api.version>6.1.0-M2</servlet-api.version>
+        <jackson.version>2.15.4</jackson.version>
+        <tomcat.version>9.0.0.M6</tomcat.version>
+        <tomcat-logging.version>9.0.0.M6</tomcat-logging.version>
         <junit.version>5.10.2</junit.version>
         <h2.version>2.2.220</h2.version>
     </properties>
@@ -35,11 +41,31 @@
             <version>${postgresql.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>${tomcat.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-logging-juli</artifactId>
+            <version>${tomcat-logging.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
             <version>${junit.version}</version>
             <type>pom</type>
-            <scope>import</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -54,4 +80,24 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>util.out.TomcatStarter</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
