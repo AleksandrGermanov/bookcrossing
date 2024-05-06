@@ -1,12 +1,14 @@
-package ownercard.dao;
+package book.dao;
 
 import book.dao.BookDao;
 import book.dao.BookDaoJdbcImpl;
+import book.dao.OwnerCardDao;
+import book.dao.OwnerCardDaoJdbcImpl;
 import book.model.Book;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ownercard.model.OwnerCard;
+import book.model.OwnerCard;
 import user.dao.UserDao;
 import user.dao.UserDaoJdbcImpl;
 import user.model.User;

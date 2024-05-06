@@ -29,10 +29,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto updateUser(UserDto userDto) {
-        throwIfNotFound(userDto.getId());
+    public UserDto updateUser(Long id, UserDto userDto) {
+        User userToUpdate = getUserElseThrow(id);
 
-        User userToUpdate = userMapper.userFromDto(userDto);
+        userDto.setId(id);
+        mergeIntoUser(userDto, userToUpdate);
         validationService.validate(userToUpdate);
         User updated = userDao.update(userToUpdate);
 
@@ -41,8 +42,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto retrieveUser(Long id){
-        return userMapper.dtoFromUser(userDao.obtain(id)
-                .orElseThrow(()-> new UserNotFoundException(id)));
+        return userMapper.dtoFromUser(getUserElseThrow(id));
     }
 
     @Override
@@ -57,11 +57,19 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 
-    private void throwIfNotFound(Long userId){
-        if(!userDao.exists(userId)){
-            throw new UserNotFoundException(userId);
+    private void mergeIntoUser(UserDto updated, User userToUpdate){
+        if(updated.getName() != null){
+            userToUpdate.setName(updated.getName());
+        }
+        if(updated.getEmail() != null){
+            userToUpdate.setEmail(updated.getEmail());
         }
     }
+    private User getUserElseThrow(Long id) {
+        return userDao.obtain(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+    }
+
 
     private void throwIfExists(Long userId){
         if(userId == null){

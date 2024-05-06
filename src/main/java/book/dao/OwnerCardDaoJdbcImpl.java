@@ -1,10 +1,8 @@
-package ownercard.dao;
+package book.dao;
 
-import book.dao.BookLazyInitProxy;
-import exception.BookcrossingException;
 import exception.DbException;
 import exception.notfound.OwnerCardNotFoundException;
-import ownercard.model.OwnerCard;
+import book.model.OwnerCard;
 import user.dao.UserLazyInitProxy;
 import util.jdbc.InConnectionRunnable;
 import util.jdbc.InConnectionSupplier;
@@ -85,6 +83,26 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
     }
 
     @Override
+    public Optional<OwnerCard> obtainCurrentByBookId(Long bookId) {
+        InConnectionSupplier<OwnerCard> cardRead = connection -> {
+            PreparedStatement preparedStatement = null;
+            ResultSet resultSet = null;
+            try {
+                preparedStatement = connection.prepareStatement(QueryPool.CARD_SELECT_CURRENT_BY_BOOK_ID);
+                preparedStatement.setLong(1, bookId);
+                resultSet = preparedStatement.executeQuery();
+                return RowMapper.mapSingleResult(resultSet);
+            } catch (SQLException e) {
+                throw new DbException("Obtaining the ownerCard failed.");
+            } finally {
+                JdbcUtils.tryClose(resultSet, preparedStatement);
+            }
+        };
+
+        return Optional.ofNullable(JdbcUtils.inTransactionGet(cardRead));
+    }
+
+    @Override
     public void delete(Long id) {
         //Implementation is not supposed, method does nothing according to LSP;
     }
@@ -128,7 +146,10 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
         private static final String CARD_SELECT_BY_ID = "SELECT * "
                 + "FROM owner_cards "
                 + "WHERE id = ? ";
-
+        private static final String CARD_SELECT_CURRENT_BY_BOOK_ID = "SELECT * "
+                + "FROM owner_cards "
+                + "WHERE book_id = ? "
+                + "AND owned_till IS NULL;";
         private static final String CARD_EXISTS = "SELECT EXISTS(SELECT 1 FROM owner_cards WHERE id = ?);";
     }
 

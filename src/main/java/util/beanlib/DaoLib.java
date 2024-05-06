@@ -6,8 +6,8 @@ import bookrequest.dao.BookRequestDao;
 import bookrequest.dao.BookRequestDaoJdbcImpl;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
-import ownercard.dao.OwnerCardDao;
-import ownercard.dao.OwnerCardDaoJdbcImpl;
+import book.dao.OwnerCardDao;
+import book.dao.OwnerCardDaoJdbcImpl;
 import user.dao.UserDao;
 import user.dao.UserDaoJdbcImpl;
 

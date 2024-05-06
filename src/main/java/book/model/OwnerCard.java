@@ -1,4 +1,4 @@
-package ownercard.model;
+package book.model;
 
 import book.model.Book;
 import lombok.AllArgsConstructor;

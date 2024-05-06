@@ -23,7 +23,7 @@ public class ValidationServiceImpl implements ValidationService {
             try (ValidatorFactory factory = Validation.byDefaultProvider()
                     .configure()
                     .messageInterpolator(new ParameterMessageInterpolator())
-                    .buildValidatorFactory();) {
+                    .buildValidatorFactory()) {
                 validator = factory.getValidator();
             } catch (Exception e) {
                 throw new BookcrossingException(String.format("Could not initiate "

@@ -127,6 +127,7 @@ public class BookDaoJdbcImpl implements BookDao {
         return searchByParams(new LinkedHashMap<>(), null);
     }
 
+    @Override
     public List<Book> searchByParams(LinkedHashMap<String, String> params, BookFetchOrder order) {
         List<String> paramKeys = new ArrayList<>(params.keySet());
         InConnectionSupplier<List<Book>> bookSearch = connection -> {

@@ -2,6 +2,7 @@ package exception.handler;
 
 import exception.exists.ExistsException;
 import exception.notfound.NotFoundException;
+import jakarta.validation.ConstraintViolationException;
 
 import java.time.LocalDateTime;
 import java.util.function.Supplier;
@@ -17,6 +18,8 @@ public class ExceptionHandler {
             value = handleNotFound(e);
         } catch (ExistsException e) {
             value = handleExists(e);
+        } catch (ConstraintViolationException e) {
+            value = handleConstraintViolation(e);
         } catch (Exception e) {
             value = handleUnexpectedException(e);
         }
@@ -45,7 +48,7 @@ public class ExceptionHandler {
 
         return new ErrorReport(
                 LocalDateTime.now(),
-                String.format("Произошла ошибка %s c сообщением \"%s\".",
+                String.format("Произошла ошибка %s c сообщением %s",
                         e.getClass().getName(), e.getMessage()),
                 404
         );
@@ -55,9 +58,19 @@ public class ExceptionHandler {
 
         return new ErrorReport(
                 LocalDateTime.parse(LocalDateTime.now().toString()),
-                String.format("Произошла ошибка %s c сообщением \"%s\".",
+                String.format("Произошла ошибка %s c сообщением %s",
                         e.getClass().getName(), e.getMessage()),
                 409
+        );
+    }
+
+    private ErrorReport handleConstraintViolation(ConstraintViolationException e) {
+
+        return new ErrorReport(
+                LocalDateTime.parse(LocalDateTime.now().toString()),
+                String.format("Произошла ошибка %s c сообщением %s",
+                        e.getClass().getName(), e.getMessage()),
+                403
         );
     }
 
@@ -65,7 +78,7 @@ public class ExceptionHandler {
 
         return new ErrorReport(
                 LocalDateTime.parse(LocalDateTime.now().toString()),
-                String.format("Произошла непредвиденная ошибка %s c сообщением \"%s\".",
+                String.format("Произошла непредвиденная ошибка %s c сообщением %s",
                         e.getClass().getName(), e.getMessage()),
                 500
         );
