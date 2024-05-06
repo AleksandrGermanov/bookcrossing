@@ -7,6 +7,6 @@ import util.dao.CommonDao;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public interface BookDao extends CommonDao<Book,Long> {
+public interface BookDao extends CommonDao<Book, Long> {
     List<Book> searchByParams(LinkedHashMap<String, String> params, BookFetchOrder order);
 }

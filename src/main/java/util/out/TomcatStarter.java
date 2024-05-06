@@ -16,7 +16,7 @@ public class TomcatStarter {
 
         Servlet userServlet = new UserController();
         Tomcat.addServlet(context, "users", userServlet);
-        context.addServletMapping( "/users/*", "users");
+        context.addServletMapping("/users/*", "users");
 
         tomcat.start();
         tomcat.getServer().await();

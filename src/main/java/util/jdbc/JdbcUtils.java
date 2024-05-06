@@ -12,21 +12,19 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class JdbcUtils {
-    static {
-    init();
-    }
-
     private static Path propertiesPath;
     private static String url;
     private static String user;
     private static String password;
 
+    static {
+        init();
+    }
 
     public static void setPath(Path propertiesPath) {
         JdbcUtils.propertiesPath = propertiesPath;
         init();
     }
-
 
 
     private static void init() {

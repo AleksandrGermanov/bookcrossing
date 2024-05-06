@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.experimental.UtilityClass;
 import user.dto.UserMapper;
 import user.dto.UserMapperImpl;
+
 @UtilityClass
 public final class MapperLib {
     @Getter
@@ -13,10 +14,11 @@ public final class MapperLib {
     @Getter
     private static final BookMapper bookImpl = new BookMapperImpl();
 
-    public static UserMapper getDefaultUserMapper(){
+    public static UserMapper getDefaultUserMapper() {
         return userImpl;
     }
-    public static BookMapper getDefaultBookMapper(){
+
+    public static BookMapper getDefaultBookMapper() {
         return bookImpl;
     }
 }

@@ -106,9 +106,10 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
                 preparedStatement = connection.prepareStatement(QueryPool.REQUEST_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                if(resultSet.next()){
+                if (resultSet.next()) {
                     return resultSet.getBoolean(1);
-                };
+                }
+                ;
             } catch (SQLException e) {
                 throw new DbException("Book existence check failed.");
             } finally {
@@ -134,8 +135,8 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
                 + "SET requester_id = ?, book_id = ?, created_on = ? "
                 + "WHERE id = ?;";
         private static final String REQUEST_SELECT_BY_ID = "SELECT * "
-            + "FROM book_requests "
-            + "WHERE id = ?";
+                + "FROM book_requests "
+                + "WHERE id = ?";
         private static final String REQUEST_DELETE = "DELETE FROM book_requests "
                 + " WHERE id = ?;";
         private static final String REQUEST_EXISTS = "SELECT EXISTS(SELECT 1 "

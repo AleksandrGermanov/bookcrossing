@@ -41,42 +41,43 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto retrieveUser(Long id){
+    public UserDto retrieveUser(Long id) {
         return userMapper.dtoFromUser(getUserElseThrow(id));
     }
 
     @Override
-    public void deleteUser(Long id){
+    public void deleteUser(Long id) {
         userDao.delete(id);
     }
 
     @Override
-    public List<UserDto> findAll(){
+    public List<UserDto> findAll() {
         return userDao.findAll().stream()
                 .map(userMapper::dtoFromUser)
                 .toList();
     }
 
-    private void mergeIntoUser(UserDto updated, User userToUpdate){
-        if(updated.getName() != null){
+    private void mergeIntoUser(UserDto updated, User userToUpdate) {
+        if (updated.getName() != null) {
             userToUpdate.setName(updated.getName());
         }
-        if(updated.getEmail() != null){
+        if (updated.getEmail() != null) {
             userToUpdate.setEmail(updated.getEmail());
         }
     }
+
     private User getUserElseThrow(Long id) {
         return userDao.obtain(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
 
-    private void throwIfExists(Long userId){
-        if(userId == null){
+    private void throwIfExists(Long userId) {
+        if (userId == null) {
             return;
         }
 
-        if(userDao.exists(userId)){
+        if (userDao.exists(userId)) {
             throw new UserExistsException(userId);
         }
     }

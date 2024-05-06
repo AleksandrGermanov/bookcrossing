@@ -54,7 +54,7 @@ public class UserLazyInitProxy extends User {
         return user.getRequestsTo();
     }
 
-    public User getUser(){
+    public User getUser() {
         initUser();
         return user;
     }

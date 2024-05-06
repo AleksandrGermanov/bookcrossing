@@ -14,10 +14,11 @@ public final class ServiceLib {
     @Getter
     private static final BookService bookImpl = new BookServiceImpl();
 
-    public static UserService getDefaultUserService(){
+    public static UserService getDefaultUserService() {
         return userImpl;
     }
-    public static BookService getDefaultBookService(){
+
+    public static BookService getDefaultBookService() {
         return bookImpl;
     }
 }

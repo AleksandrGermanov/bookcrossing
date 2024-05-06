@@ -1,6 +1,5 @@
 package book.model;
 
-import book.model.Book;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

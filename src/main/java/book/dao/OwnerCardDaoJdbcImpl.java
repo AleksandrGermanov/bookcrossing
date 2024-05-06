@@ -1,8 +1,8 @@
 package book.dao;
 
+import book.model.OwnerCard;
 import exception.DbException;
 import exception.notfound.OwnerCardNotFoundException;
-import book.model.OwnerCard;
 import user.dao.UserLazyInitProxy;
 import util.jdbc.InConnectionRunnable;
 import util.jdbc.InConnectionSupplier;
@@ -116,9 +116,10 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 preparedStatement = connection.prepareStatement(QueryPool.CARD_EXISTS);
                 preparedStatement.setLong(1, id);
                 resultSet = preparedStatement.executeQuery();
-                if (resultSet.next()){
+                if (resultSet.next()) {
                     return resultSet.getBoolean(1);
-                };
+                }
+                ;
             } catch (SQLException e) {
                 throw new DbException("OwnerCard existence check failed.");
             } finally {
@@ -141,8 +142,8 @@ public class OwnerCardDaoJdbcImpl implements OwnerCardDao {
                 + "owned_since) "
                 + "VALUES (?,?,?)";
         private static final String CARD_UPDATE = "UPDATE owner_cards "
-                +"SET owner_id = ?, book_id = ?, owned_since = ?, owned_till = ? "
-                +"WHERE id = ?";
+                + "SET owner_id = ?, book_id = ?, owned_since = ?, owned_till = ? "
+                + "WHERE id = ?";
         private static final String CARD_SELECT_BY_ID = "SELECT * "
                 + "FROM owner_cards "
                 + "WHERE id = ? ";

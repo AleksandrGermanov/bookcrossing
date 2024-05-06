@@ -11,12 +11,12 @@ public class ResponseFormer {
     private final ExceptionHandler exceptionHandler = new ExceptionHandler();
     private final ObjectMapper objectMapper = ObjectMapperTuner.getTuned();
 
-    public ResponseForm getResponse(Runnable runnable){
+    public ResponseForm getResponse(Runnable runnable) {
         ErrorReport errorReport = exceptionHandler.runWithHandler(runnable);
         return formResponse(errorReport);
     }
 
-    public <T> ResponseForm getResponse(Supplier<T> supplier){
+    public <T> ResponseForm getResponse(Supplier<T> supplier) {
         Object body = exceptionHandler.getWithHandler(supplier);
         return formResponse(body);
     }
@@ -33,8 +33,8 @@ public class ResponseFormer {
             }
 
             return new ResponseForm(objectMapper.writeValueAsString(body), 200);
-        } catch (JsonProcessingException e){
-        e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
 
         return null;

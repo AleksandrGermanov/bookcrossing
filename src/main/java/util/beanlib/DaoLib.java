@@ -2,12 +2,12 @@ package util.beanlib;
 
 import book.dao.BookDao;
 import book.dao.BookDaoJdbcImpl;
+import book.dao.OwnerCardDao;
+import book.dao.OwnerCardDaoJdbcImpl;
 import bookrequest.dao.BookRequestDao;
 import bookrequest.dao.BookRequestDaoJdbcImpl;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
-import book.dao.OwnerCardDao;
-import book.dao.OwnerCardDaoJdbcImpl;
 import user.dao.UserDao;
 import user.dao.UserDaoJdbcImpl;
 

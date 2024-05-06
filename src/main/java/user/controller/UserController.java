@@ -83,12 +83,11 @@ public class UserController extends HttpServlet {
     }
 
 
-
-    private void writeResponse(ResponseForm responseForm, HttpServletResponse response) throws IOException{
+    private void writeResponse(ResponseForm responseForm, HttpServletResponse response) throws IOException {
         response.setStatus(responseForm.getResponseCode());
         response.setContentType("Application/JSON");
         response.setCharacterEncoding("utf-8");
-        if(responseForm.getResponseBody() == null){
+        if (responseForm.getResponseBody() == null) {
             return;
         }
         PrintWriter writer = response.getWriter();

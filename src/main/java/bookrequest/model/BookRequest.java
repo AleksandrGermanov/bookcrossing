@@ -1,11 +1,11 @@
 package bookrequest.model;
 
+import book.model.Book;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import user.model.User;
-import book.model.Book;
 
 import java.time.LocalDateTime;
 
