@@ -23,28 +23,7 @@ public class JdbcUtils {
 
     public static void setPath(Path propertiesPath) {
         JdbcUtils.propertiesPath = propertiesPath;
-        init();
-    }
-
-
-    private static void init() {
-        PropertiesReader reader = propertiesPath != null
-                ? new PropertiesReader(propertiesPath)
-                : new PropertiesReader();
-        url = reader.getProperty(PropertiesReader.DB_URL);
-        user = reader.getProperty(PropertiesReader.DB_USER);
-        password = reader.getProperty(PropertiesReader.DB_PASSWORD);
-    }
-
-    private static Connection getConnection() {
-        Connection connection;
-        try {
-            connection = DriverManager.getConnection(url,
-                    user, password);
-        } catch (SQLException e) {
-            throw new DbException("Could not obtain connection.");
-        }
-        return connection;
+        initWithPropertiesReader();
     }
 
     public static void inTransactionRun(InConnectionRunnable runnable) {
@@ -109,7 +88,44 @@ public class JdbcUtils {
         }
     }
 
-    public static class PropertiesReader {
+    private static void init() {
+        url = System.getenv("DB_URL") != null
+                ? System.getenv("DB_URL")
+                : null;
+        user = System.getenv("DB_USER") != null
+                ? System.getenv("DB_USER")
+                : null;
+        password = System.getenv("DB_PASSWORD") != null
+                ? System.getenv("DB_PASSWORD")
+                : null;
+        if (url != null && user != null && password != null) {
+            return;
+        }
+        initWithPropertiesReader();
+    }
+
+    private static void initWithPropertiesReader() {
+        PropertiesReader reader = propertiesPath != null
+                ? new PropertiesReader(propertiesPath)
+                : new PropertiesReader();
+        url = reader.getProperty(PropertiesReader.DB_URL);
+        user = reader.getProperty(PropertiesReader.DB_USER);
+        password = reader.getProperty(PropertiesReader.DB_PASSWORD);
+    }
+
+    private static Connection getConnection() {
+        Connection connection;
+        try {
+            connection = DriverManager.getConnection(url,
+                    user, password);
+        } catch (SQLException e) {
+            throw new DbException("Could not obtain connection.");
+        }
+        return connection;
+    }
+
+
+    private static class PropertiesReader {
         private static final Path defaultPath = Path.of(System.getProperty("user.dir"),
                 "src/main/resources", "jdbc.properties");
         private static final String DB_URL = "db.url";
@@ -118,12 +134,12 @@ public class JdbcUtils {
         private final Path directoryPath;
         private List<String> properties;
 
-        public PropertiesReader() {
+        private PropertiesReader() {
             this.directoryPath = defaultPath;
             fetchProperties();
         }
 
-        public PropertiesReader(Path directoryPath) {
+        private PropertiesReader(Path directoryPath) {
             this.directoryPath = directoryPath;
             fetchProperties();
         }

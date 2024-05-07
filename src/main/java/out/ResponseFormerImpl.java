@@ -1,4 +1,4 @@
-package util.out;
+package out;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,15 +7,17 @@ import exception.handler.ExceptionHandler;
 
 import java.util.function.Supplier;
 
-public class ResponseFormer {
+public class ResponseFormerImpl implements ResponseFormer {
     private final ExceptionHandler exceptionHandler = new ExceptionHandler();
     private final ObjectMapper objectMapper = ObjectMapperTuner.getTuned();
 
+    @Override
     public ResponseForm getResponse(Runnable runnable) {
         ErrorReport errorReport = exceptionHandler.runWithHandler(runnable);
         return formResponse(errorReport);
     }
 
+    @Override
     public <T> ResponseForm getResponse(Supplier<T> supplier) {
         Object body = exceptionHandler.getWithHandler(supplier);
         return formResponse(body);
@@ -39,5 +41,4 @@ public class ResponseFormer {
 
         return null;
     }
-
 }

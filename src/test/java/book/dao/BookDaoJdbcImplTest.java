@@ -100,8 +100,8 @@ class BookDaoJdbcImplTest {
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
         params.put("title", "TH");
         params.put("author", "thort");
-        params.put("publicationYear", "1900");
-        params.put("isAvailable", "true");
+        params.put("publication-year", "1900");
+        params.put("is-available", "true");
 
         assertEquals(List.of(created3), bookDao.searchByParams(params, null));
     }

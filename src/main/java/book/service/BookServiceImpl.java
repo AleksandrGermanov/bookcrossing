@@ -9,6 +9,7 @@ import book.model.OwnerCard;
 import exception.OwnerMismatchException;
 import exception.notfound.BookNotFoundException;
 import exception.notfound.OwnerCardNotFoundException;
+import lombok.RequiredArgsConstructor;
 import user.dao.UserLazyInitProxy;
 import user.model.User;
 import util.beanlib.DaoLib;
@@ -19,12 +20,19 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-
+@RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
-    private final BookDao bookDao = DaoLib.getDefaultBookDao();
-    private final OwnerCardDao ownerCardDao = DaoLib.getDefaultOwnerCardDao();
-    private final BookMapper bookMapper = MapperLib.getDefaultBookMapper();
-    private final ValidationService validationService = ValidationService.DEFAULT_INSTANCE;
+    private final BookDao bookDao;
+    private final OwnerCardDao ownerCardDao;
+    private final BookMapper bookMapper;
+    private final ValidationService validationService;
+
+    public BookServiceImpl(){
+        bookDao = DaoLib.getDefaultBookDao();
+        ownerCardDao = DaoLib.getDefaultOwnerCardDao();
+        bookMapper = MapperLib.getDefaultBookMapper();
+        validationService = ValidationService.DEFAULT_INSTANCE;
+    }
 
     @Override
     public BookDto createBook(Long ownerId, BookDto bookDto) {

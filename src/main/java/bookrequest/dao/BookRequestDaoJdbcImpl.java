@@ -111,7 +111,7 @@ public class BookRequestDaoJdbcImpl implements BookRequestDao {
                 }
                 ;
             } catch (SQLException e) {
-                throw new DbException("Book existence check failed.");
+                throw new DbException("BookRequest existence check failed.");
             } finally {
                 JdbcUtils.tryClose(resultSet, preparedStatement);
             }

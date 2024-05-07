@@ -1,5 +1,6 @@
 package exception.handler;
 
+import exception.OwnerMismatchException;
 import exception.exists.ExistsException;
 import exception.notfound.NotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -20,6 +21,8 @@ public class ExceptionHandler {
             value = handleExists(e);
         } catch (ConstraintViolationException e) {
             value = handleConstraintViolation(e);
+        } catch (OwnerMismatchException e) {
+            value = handleOwnerMismatchException(e);
         } catch (Exception e) {
             value = handleUnexpectedException(e);
         }
@@ -37,6 +40,10 @@ public class ExceptionHandler {
             value = handleNotFound(e);
         } catch (ExistsException e) {
             value = handleExists(e);
+        } catch (OwnerMismatchException e) {
+            value = handleOwnerMismatchException(e);
+        } catch (ConstraintViolationException e) {
+            value = handleConstraintViolation(e);
         } catch (Exception e) {
             value = handleUnexpectedException(e);
         }
@@ -65,6 +72,16 @@ public class ExceptionHandler {
     }
 
     private ErrorReport handleConstraintViolation(ConstraintViolationException e) {
+
+        return new ErrorReport(
+                LocalDateTime.parse(LocalDateTime.now().toString()),
+                String.format("Произошла ошибка %s c сообщением %s",
+                        e.getClass().getName(), e.getMessage()),
+                403
+        );
+    }
+
+    private ErrorReport handleOwnerMismatchException(OwnerMismatchException e) {
 
         return new ErrorReport(
                 LocalDateTime.parse(LocalDateTime.now().toString()),

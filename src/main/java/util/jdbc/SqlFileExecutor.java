@@ -13,15 +13,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SqlFileExecutor {
-    private static final Path deafultPath = Path.of(System.getProperty("user.dir"), "src/main/resources", "schema.sql");
+    private static final Path DEAFULT_SCHEMA_PATH = Path.of(
+            System.getProperty("user.dir"), "src/main/resources", "schema.sql");
 
     public static void executeSchema() {
-        executeSchema(deafultPath);
+        executeSchema(DEAFULT_SCHEMA_PATH);
     }
 
-    public static void executeSchema(Path path) {
+    public static void executeSchema(Path schemaPath) {
         try (Stream<String> queryStream = Files.lines(
-                path,
+                schemaPath,
                 StandardCharsets.UTF_8)) {
             JdbcUtils.inTransactionRun((prepareRunnable(queryStream.collect(Collectors.joining()))));
         } catch (IOException e) {

@@ -159,8 +159,8 @@ public class BookDaoJdbcImpl implements BookDao {
         for (Map.Entry<String, String> param : params.entrySet()) {
             switch (param.getKey()) {
                 case "title", "author" -> preparedStatement.setString(++index, '%' + param.getValue() + '%');
-                case "publicationYear" -> preparedStatement.setInt(++index, Integer.parseInt(param.getValue()));
-                case "isAvailable" -> preparedStatement.setBoolean(++index, Boolean.parseBoolean(param.getValue()));
+                case "publication-year" -> preparedStatement.setInt(++index, Integer.parseInt(param.getValue()));
+                case "is-available" -> preparedStatement.setBoolean(++index, Boolean.parseBoolean(param.getValue()));
                 default -> throw new IllegalArgumentException("BookSearch parameter is invalid.");
             }
         }
@@ -243,8 +243,8 @@ public class BookDaoJdbcImpl implements BookDao {
                 switch (param) {
                     case "title" -> currentSearch.append(TITLE_SEARCH);
                     case "author" -> currentSearch.append(AUTHOR_SEARCH);
-                    case "publicationYear" -> currentSearch.append(PUBLICATION_YEAR_SEARCH);
-                    case "isAvailable" -> currentSearch.append(IS_AVAILABLE_SEARCH);
+                    case "publication-year" -> currentSearch.append(PUBLICATION_YEAR_SEARCH);
+                    case "is-available" -> currentSearch.append(IS_AVAILABLE_SEARCH);
                     default -> throw new IllegalArgumentException("BookSearch parameter is invalid.");
                 }
             }

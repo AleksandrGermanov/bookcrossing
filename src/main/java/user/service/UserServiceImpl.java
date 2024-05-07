@@ -2,6 +2,7 @@ package user.service;
 
 import exception.exists.UserExistsException;
 import exception.notfound.UserNotFoundException;
+import lombok.RequiredArgsConstructor;
 import user.dao.UserDao;
 import user.dto.UserDto;
 import user.dto.UserMapper;
@@ -12,10 +13,17 @@ import util.validation.ValidationService;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final UserDao userDao = DaoLib.getDefaultUserDao();
-    private final UserMapper userMapper = MapperLib.getDefaultUserMapper();
-    private final ValidationService validationService = ValidationService.DEFAULT_INSTANCE;
+    private final UserDao userDao;
+    private final UserMapper userMapper;
+    private final ValidationService validationService;
+
+    public UserServiceImpl(){
+        userDao = DaoLib.getDefaultUserDao();
+        userMapper = MapperLib.getDefaultUserMapper();
+        validationService = ValidationService.DEFAULT_INSTANCE;
+    }
 
     @Override
     public UserDto createUser(UserDto userDto) {

@@ -1,9 +1,8 @@
-package user.controller;
+package bookrequest;
 
+import bookrequest.service.BookRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import user.dto.UserDto;
-import user.service.UserService;
 import util.beanlib.ServiceLib;
 import out.ObjectMapperTuner;
 import out.ResponseForm;
@@ -15,15 +14,16 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static out.ResponseFormer.writeResponse;
+
 @RequiredArgsConstructor
-public class UserController extends HttpServlet {
+public class BookRequestController extends HttpServlet {
     private final ObjectMapper objectMapper;
-    private final UserService userService;
+    private final BookRequestService bookRequestService;
     private final ResponseFormer responseFormer;
 
-    public UserController(){
+    public BookRequestController() {
         objectMapper = ObjectMapperTuner.getTuned();
-        userService = ServiceLib.getDefaultUserService();
+        bookRequestService = ServiceLib.getDefaultBookRequestService();
         responseFormer = ResponseFormer.DEFAULT_INSTANCE;
     }
 
@@ -33,7 +33,6 @@ public class UserController extends HttpServlet {
         switch (method) {
             case "GET" -> doGet(request, response);
             case "POST" -> doPost(request, response);
-            case "PATCH" -> doPatch(request, response);
             case "DELETE" -> doDelete(request, response);
             default -> writeResponse(ResponseForm.METHOD_IS_NOT_ALLOWED, response);
         }
@@ -43,12 +42,9 @@ public class UserController extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
-        if (request.getRequestURI().matches("/users/?")) {
-            responseForm = responseFormer.getResponse(userService::findAll);
-        }
-        if (request.getRequestURI().matches("/users/[0-9]+")) {
-            Long id = Long.parseLong(request.getRequestURI().substring("/users/".length()));
-            responseForm = responseFormer.getResponse(() -> userService.retrieveUser(id));
+        if (request.getRequestURI().matches("/requests/[0-9]+")) {
+            Long id = Long.parseLong(request.getRequestURI().substring("/requests/".length()));
+            responseForm = responseFormer.getResponse(() -> bookRequestService.retrieveBookRequest(id));
         }
 
         writeResponse(responseForm, response);
@@ -58,21 +54,10 @@ public class UserController extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
-        if (request.getRequestURI().matches("/users/?")) {
-            UserDto userDto = objectMapper.readValue(request.getReader(), UserDto.class);
-            responseForm = responseFormer.getResponse(() -> userService.createUser(userDto));
-        }
-
-        writeResponse(responseForm, response);
-    }
-
-    public void doPatch(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
-
-        if (request.getRequestURI().matches("/users/[0-9]+")) {
-            Long id = Long.parseLong(request.getRequestURI().substring("/users/".length()));
-            UserDto userDto = objectMapper.readValue(request.getReader(), UserDto.class);
-            responseForm = responseFormer.getResponse(() -> userService.updateUser(id, userDto));
+        if (request.getRequestURI().matches("/requests/?")) {
+            Long userId = Long.parseLong(request.getParameter("user"));
+            Long bookId = Long.parseLong(request.getParameter("book"));
+            responseForm = responseFormer.getResponse(() -> bookRequestService.createBookRequest(userId, bookId));
         }
 
         writeResponse(responseForm, response);
@@ -82,9 +67,10 @@ public class UserController extends HttpServlet {
     public void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
-        if (request.getRequestURI().matches("/users/[0-9]+")) {
-            Long id = Long.parseLong(request.getRequestURI().substring("/users/".length()));
-            responseForm = responseFormer.getResponse(() -> userService.deleteUser(id));
+        if (request.getRequestURI().matches("/requests/[0-9]+")) {
+            Long userId = Long.parseLong(request.getParameter("user"));
+            Long requestId = Long.parseLong(request.getRequestURI().substring("/requests/".length()));
+            responseForm = responseFormer.getResponse(() -> bookRequestService.deleteBookRequest(userId, requestId));
         }
 
         writeResponse(responseForm, response);
