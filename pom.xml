@@ -16,12 +16,12 @@
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <lombok.version>1.18.30</lombok.version>
         <postgresql.version>42.3.8</postgresql.version>
-        <servlet-api.version>6.1.0-M2</servlet-api.version>
         <jackson.version>2.15.4</jackson.version>
         <tomcat.version>9.0.0.M6</tomcat.version>
         <tomcat-logging.version>9.0.0.M6</tomcat-logging.version>
         <junit.version>5.10.2</junit.version>
         <h2.version>2.2.220</h2.version>
+        <mockito.version>5.11.0</mockito.version>
     </properties>
 
     <dependencies>
@@ -79,6 +79,12 @@
             <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -95,7 +101,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>out.TomcatStarter</mainClass>
+                    <mainClass>Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

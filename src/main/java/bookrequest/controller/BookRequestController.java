@@ -1,4 +1,4 @@
-package bookrequest;
+package bookrequest.controller;
 
 import bookrequest.service.BookRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;

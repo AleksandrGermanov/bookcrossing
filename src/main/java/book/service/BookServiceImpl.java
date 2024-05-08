@@ -9,11 +9,14 @@ import book.model.OwnerCard;
 import exception.OwnerMismatchException;
 import exception.notfound.BookNotFoundException;
 import exception.notfound.OwnerCardNotFoundException;
+import exception.notfound.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import user.dao.UserLazyInitProxy;
 import user.model.User;
 import util.beanlib.DaoLib;
 import util.beanlib.MapperLib;
+import util.beanlib.ProxyFactory;
 import util.validation.ValidationService;
 
 import java.time.LocalDateTime;
@@ -26,12 +29,15 @@ public class BookServiceImpl implements BookService {
     private final OwnerCardDao ownerCardDao;
     private final BookMapper bookMapper;
     private final ValidationService validationService;
+    @Setter
+    private ProxyFactory proxyFactory;
 
     public BookServiceImpl(){
         bookDao = DaoLib.getDefaultBookDao();
         ownerCardDao = DaoLib.getDefaultOwnerCardDao();
         bookMapper = MapperLib.getDefaultBookMapper();
         validationService = ValidationService.DEFAULT_INSTANCE;
+        proxyFactory = new ProxyFactory();
     }
 
     @Override
@@ -39,8 +45,12 @@ public class BookServiceImpl implements BookService {
         Book bookToCreate = bookMapper.bookFromDto(bookDto);
         validationService.validate(bookToCreate);
         Book created = bookDao.create(bookToCreate);
+        UserLazyInitProxy ownerProxy =  proxyFactory.proxyOfUser(ownerId);
+        if(!ownerProxy.referencesExisting()){
+            throw new UserNotFoundException(ownerId);
+        }
         ownerCardDao.create(new OwnerCard(null,
-                new UserLazyInitProxy(ownerId),
+                ownerProxy,
                 created,
                 LocalDateTime.now(),
                 null));
@@ -102,9 +112,13 @@ public class BookServiceImpl implements BookService {
         checkBookOwner(userFromId, bookId, currentOwnerId);
         currentOwnerCard.setOwnedTill(LocalDateTime.now());
         ownerCardDao.update(currentOwnerCard);
+        UserLazyInitProxy userToProxy =  proxyFactory.proxyOfUser(userToId);
+        if(!userToProxy.referencesExisting()){
+            throw new UserNotFoundException(userToId);
+        }
         ownerCardDao.create(new OwnerCard(
                 null,
-                new UserLazyInitProxy(userToId),
+                userToProxy,
                 currentOwnerCard.getBook(),
                 LocalDateTime.now(),
                 null));

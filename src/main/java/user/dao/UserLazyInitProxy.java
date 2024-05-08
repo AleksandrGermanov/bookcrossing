@@ -2,20 +2,23 @@ package user.dao;
 
 import book.model.Book;
 import exception.notfound.UserNotFoundException;
+import lombok.RequiredArgsConstructor;
 import user.model.User;
 import util.beanlib.DaoLib;
 
 import java.util.List;
 import java.util.Objects;
 
+@RequiredArgsConstructor
 public class UserLazyInitProxy extends User {
     private final Long id;
-    private final UserDao userDao = DaoLib.getDefaultUserDao();
+    private final UserDao userDao;
     private User user;
 
 
     public UserLazyInitProxy(Long id) {
         this.id = id;
+        userDao = DaoLib.getDefaultUserDao();
     }
 
 
@@ -57,6 +60,10 @@ public class UserLazyInitProxy extends User {
     public User getUser() {
         initUser();
         return user;
+    }
+
+    public boolean referencesExisting(){
+        return userDao.exists(id);
     }
 
     private void initUser() {

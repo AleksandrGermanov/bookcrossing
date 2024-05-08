@@ -2,19 +2,22 @@ package book.dao;
 
 import book.model.Book;
 import exception.notfound.BookNotFoundException;
+import lombok.RequiredArgsConstructor;
 import user.model.User;
 import util.beanlib.DaoLib;
 
 import java.util.List;
 import java.util.Objects;
 
+@RequiredArgsConstructor
 public class BookLazyInitProxy extends Book {
     private final Long id;
-    private final BookDao bookDao = DaoLib.getDefaultBookDao();
+    private final BookDao bookDao;
     private Book book;
 
     public BookLazyInitProxy(Long id) {
         this.id = id;
+        bookDao = DaoLib.getDefaultBookDao();
     }
 
     @Override
@@ -52,16 +55,20 @@ public class BookLazyInitProxy extends Book {
         return book.getOwnedBy();
     }
 
-    @Override
-    public String toString() {
-        initBook();
-        return book.toString();
+    public boolean referencesExisting(){
+        return bookDao.exists(id);
     }
 
     private void initBook() {
         if (book == null) {
             book = bookDao.obtain(id).orElseThrow(() -> new BookNotFoundException(id));
         }
+    }
+
+    @Override
+    public String toString() {
+        initBook();
+        return book.toString();
     }
 
     @Override

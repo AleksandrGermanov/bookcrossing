@@ -9,10 +9,12 @@ import bookrequest.model.BookRequest;
 import exception.OwnerMismatchException;
 import exception.notfound.BookRequestNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import user.dao.UserLazyInitProxy;
 import user.model.User;
 import util.beanlib.DaoLib;
 import util.beanlib.MapperLib;
+import util.beanlib.ProxyFactory;
 import util.validation.ValidationService;
 
 import java.util.List;
@@ -23,25 +25,28 @@ public class BookRequestServiceImpl implements BookRequestService {
     private final BookRequestDao bookRequestDao;
     private final BookRequestMapper bookRequestMapper;
     private final ValidationService validationService;
+    @Setter
+    private ProxyFactory proxyFactory;
 
     public BookRequestServiceImpl(){
         bookRequestDao = DaoLib.getDefaultBookRequestDao();
         bookRequestMapper = MapperLib.getDefaultBookRequestMapper();
         validationService = ValidationService.DEFAULT_INSTANCE;
+        proxyFactory = new ProxyFactory();
     }
     @Override
     public BookRequestDto createBookRequest(Long requesterId, Long bookId) {
-        Book book = new BookLazyInitProxy(bookId);
+        Book book = proxyFactory.proxyOfBook(bookId);
         List<User> owners = book.getOwnedBy();
-        Long currentUserId = owners.get(owners.size() - 1).getId();
-        if (Objects.equals(requesterId, currentUserId)) {
+        Long currentOwnerId = owners.get(owners.size() - 1).getId();
+        if (Objects.equals(requesterId, currentOwnerId)) {
             throw new OwnerMismatchException(
                     String.format("Book with id = %d is already owned by user with id = %d",
                             bookId, requesterId)
             );
         }
 
-        BookRequest requestToSave = new BookRequest(new UserLazyInitProxy(requesterId), book);
+        BookRequest requestToSave = new BookRequest(proxyFactory.proxyOfUser(requesterId), book);
         validationService.validate(requestToSave);
         BookRequest saved = bookRequestDao.create(requestToSave);
 
@@ -58,9 +63,9 @@ public class BookRequestServiceImpl implements BookRequestService {
     @Override
     public void deleteBookRequest(Long userId, Long bookRequestId) {
         BookRequest requestToDelete = getRequestOrElseThrow(bookRequestId);
-        if (Objects.equals(requestToDelete.getRequester().getId(), userId)) {
+        if (!Objects.equals(requestToDelete.getRequester().getId(), userId)) {
             throw new OwnerMismatchException(
-                    String.format("Book with id = %d is not owned by user with id = %d",
+                    String.format("Request with id = %d was not posted by user with id = %d",
                             requestToDelete.getBook().getId(), userId)
             );
         }
