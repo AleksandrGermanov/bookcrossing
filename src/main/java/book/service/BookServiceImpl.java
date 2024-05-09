@@ -49,6 +49,7 @@ public class BookServiceImpl implements BookService {
         if(!ownerProxy.referencesExisting()){
             throw new UserNotFoundException(ownerId);
         }
+        created.setOwnedBy(List.of(ownerProxy));
         ownerCardDao.create(new OwnerCard(null,
                 ownerProxy,
                 created,

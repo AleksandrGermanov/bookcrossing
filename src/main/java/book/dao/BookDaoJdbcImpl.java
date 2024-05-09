@@ -16,6 +16,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
+import static java.sql.Types.INTEGER;
+
 public class BookDaoJdbcImpl implements BookDao {
     @Override
     public Book create(Book book) {
@@ -26,7 +28,11 @@ public class BookDaoJdbcImpl implements BookDao {
                 preparedStatement = connection.prepareStatement(QueryPool.BOOK_INSERT, Statement.RETURN_GENERATED_KEYS);
                 preparedStatement.setString(1, book.getTitle());
                 preparedStatement.setString(2, book.getAuthor());
-                preparedStatement.setInt(3, book.getPublicationYear());
+                if (book.getPublicationYear() != null) {
+                    preparedStatement.setInt(3, book.getPublicationYear());
+                } else {
+                    preparedStatement.setNull(3, INTEGER);
+                }
                 preparedStatement.setBoolean(4, book.getIsAvailable());
                 preparedStatement.executeUpdate();
                 resultSet = preparedStatement.getGeneratedKeys();
@@ -52,7 +58,11 @@ public class BookDaoJdbcImpl implements BookDao {
             try (PreparedStatement preparedStatement = connection.prepareStatement(QueryPool.BOOK_UPDATE)) {
                 preparedStatement.setString(1, book.getTitle());
                 preparedStatement.setString(2, book.getAuthor());
-                preparedStatement.setInt(3, book.getPublicationYear());
+                if (book.getPublicationYear() != null) {
+                    preparedStatement.setInt(3, book.getPublicationYear());
+                } else {
+                    preparedStatement.setNull(3, INTEGER);
+                }
                 preparedStatement.setBoolean(4, book.getIsAvailable());
                 preparedStatement.setLong(5, book.getId());
                 preparedStatement.executeUpdate();

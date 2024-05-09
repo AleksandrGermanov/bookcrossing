@@ -16,10 +16,8 @@ import java.util.List;
 @AllArgsConstructor
 public class Book {
     private Long id;
-    @NotNull
     @NotBlank
     private String title;
-    @NotNull
     @NotBlank
     private String author;
     @Positive

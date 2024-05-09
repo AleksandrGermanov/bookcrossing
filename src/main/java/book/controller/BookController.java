@@ -5,10 +5,10 @@ import book.service.BookFetchOrder;
 import book.service.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import util.beanlib.ServiceLib;
 import out.ObjectMapperTuner;
 import out.ResponseForm;
 import out.ResponseFormer;
+import util.beanlib.ServiceLib;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ public class BookController extends HttpServlet {
     private final BookService bookService;
     private final ResponseFormer responseFormer;
 
-    public BookController(){
+    public BookController() {
         objectMapper = ObjectMapperTuner.getTuned();
         bookService = ServiceLib.getDefaultBookService();
         responseFormer = ResponseFormer.DEFAULT_INSTANCE;
@@ -45,9 +45,10 @@ public class BookController extends HttpServlet {
                 }
             }
             case "PATCH" -> {
-                switch (request.getRequestURI()) {
-                    case "/books", "/books/" -> doPatch(request, response);
-                    default -> doGiveAway(request, response);
+                if (request.getRequestURI().matches("/books/[0-9]+")) {
+                    doPatch(request, response);
+                } else {
+                    doGiveAway(request, response);
                 }
             }
             case "DELETE" -> doDelete(request, response);
@@ -75,7 +76,9 @@ public class BookController extends HttpServlet {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
         if (request.getRequestURI().matches("/books/?")) {
-            Long userId = Long.parseLong(request.getParameter("user"));
+            Long userId = request.getParameter("user") != null
+                    ? Long.parseLong(request.getParameter("user"))
+                    : null;
             BookDto bookDto = objectMapper.readValue(request.getReader(), BookDto.class);
             if (necessaryParamsExist(userId, bookDto)) {
                 responseForm = responseFormer.getResponse(() -> bookService.createBook(userId, bookDto));
@@ -92,7 +95,9 @@ public class BookController extends HttpServlet {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
         if (request.getRequestURI().matches("/books/[0-9]+")) {
-            Long userId = Long.parseLong(request.getParameter("user"));
+            Long userId = request.getParameter("user") != null
+                    ? Long.parseLong(request.getParameter("user"))
+                    : null;
             Long bookId = Long.parseLong(request.getRequestURI().substring("/books/".length()));
             if (necessaryParamsExist(userId)) {
                 responseForm = responseFormer.getResponse(() -> bookService.deleteBook(userId, bookId));
@@ -108,7 +113,9 @@ public class BookController extends HttpServlet {
         ResponseForm responseForm = ResponseForm.URI_IS_NOT_FOUND;
 
         if (request.getRequestURI().matches("/books/[0-9]+")) {
-            Long userId = Long.parseLong(request.getParameter("user"));
+            Long userId = request.getParameter("user") != null
+                    ? Long.parseLong(request.getParameter("user"))
+                    : null;
             Long bookId = Long.parseLong(request.getRequestURI().substring("/books/".length()));
             BookDto bookDto = objectMapper.readValue(request.getReader(), BookDto.class);
             if (necessaryParamsExist(userId, bookDto)) {
@@ -126,8 +133,12 @@ public class BookController extends HttpServlet {
         String uri = request.getRequestURI();
 
         if (uri.matches("/books/[0-9]+/give-away")) {
-            Long userFromId = Long.parseLong(request.getParameter("user"));
-            Long userToId = Long.parseLong(request.getParameter("to-user"));
+            Long userFromId = request.getParameter("user") != null
+                    ? Long.parseLong(request.getParameter("user"))
+                    : null;
+            Long userToId = request.getParameter("user-to") != null
+                    ? Long.parseLong(request.getParameter("user-to"))
+                    : null;
             Long bookId = Long.parseLong(uri.substring("/books/".length(),
                     uri.lastIndexOf('/')));
             if (necessaryParamsExist(userFromId, userToId, bookId)) {
@@ -166,9 +177,9 @@ public class BookController extends HttpServlet {
         return params;
     }
 
-    private boolean necessaryParamsExist(Object... params){
-        for(Object param : params){
-            if(param == null){
+    private boolean necessaryParamsExist(Object... params) {
+        for (Object param : params) {
+            if (param == null) {
                 return false;
             }
         }

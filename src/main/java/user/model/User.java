@@ -16,9 +16,9 @@ import java.util.List;
 @AllArgsConstructor
 public class User {
     private Long id;
-    @NotNull
     @NotBlank
     private String name;
+    @NotNull
     @Email
     private String email;
     @EqualsAndHashCode.Exclude
