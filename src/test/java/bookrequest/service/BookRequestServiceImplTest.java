@@ -59,6 +59,7 @@ class BookRequestServiceImplTest {
         book.setId(1L);
         book.setTitle("title");
         book.setAuthor("author");
+        book.setIsAvailable(true);
         book.setOwnedBy(List.of(owner));
         owner = new User(1L, "user", "user@ema.il");
         bookRequest = new BookRequest(1L, requester, book,

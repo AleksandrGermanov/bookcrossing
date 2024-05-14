@@ -1,16 +1,15 @@
 package bookrequest.service;
 
-import book.dao.BookLazyInitProxy;
 import book.model.Book;
 import bookrequest.dao.BookRequestDao;
 import bookrequest.dto.BookRequestDto;
 import bookrequest.dto.BookRequestMapper;
 import bookrequest.model.BookRequest;
-import exception.OwnerMismatchException;
+import exception.mismatch.OwnerMismatchException;
+import exception.mismatch.BookStatusMismatchException;
 import exception.notfound.BookRequestNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import user.dao.UserLazyInitProxy;
 import user.model.User;
 import util.beanlib.DaoLib;
 import util.beanlib.MapperLib;
@@ -37,6 +36,10 @@ public class BookRequestServiceImpl implements BookRequestService {
     @Override
     public BookRequestDto createBookRequest(Long requesterId, Long bookId) {
         Book book = proxyFactory.proxyOfBook(bookId);
+        if(!book.getIsAvailable()){
+            throw new BookStatusMismatchException(String.format(
+                    "Book with id = %d is not available for requests.", bookId));
+        }
         List<User> owners = book.getOwnedBy();
         Long currentOwnerId = owners.get(owners.size() - 1).getId();
         if (Objects.equals(requesterId, currentOwnerId)) {

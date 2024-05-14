@@ -6,7 +6,7 @@ import book.dto.BookDto;
 import book.dto.BookMapper;
 import book.model.Book;
 import book.model.OwnerCard;
-import exception.OwnerMismatchException;
+import exception.mismatch.OwnerMismatchException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

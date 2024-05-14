@@ -4,8 +4,8 @@ import book.model.Book;
 import book.service.BookFetchOrder;
 import exception.DbException;
 import exception.notfound.BookNotFoundException;
-import user.dao.UserLazyInitProxy;
 import user.model.User;
+import util.beanlib.ProxyFactory;
 import util.jdbc.InConnectionRunnable;
 import util.jdbc.InConnectionSupplier;
 import util.jdbc.JdbcUtils;
@@ -253,7 +253,7 @@ public class BookDaoJdbcImpl implements BookDao {
                 switch (param) {
                     case "title" -> currentSearch.append(TITLE_SEARCH);
                     case "author" -> currentSearch.append(AUTHOR_SEARCH);
-                    case "publication-year" -> currentSearch.append(PUBLICATION_YEAR_SEARCH);
+                    case "published-since" -> currentSearch.append(PUBLICATION_YEAR_SEARCH);
                     case "is-available" -> currentSearch.append(IS_AVAILABLE_SEARCH);
                     default -> throw new IllegalArgumentException("BookSearch parameter is invalid.");
                 }
@@ -262,27 +262,28 @@ public class BookDaoJdbcImpl implements BookDao {
     }
 
     private static class RowMapper {
+        private final static ProxyFactory proxyFactory = new ProxyFactory();
 
         private static Book mapSingleResult(ResultSet resultSet) throws SQLException {
             Book book = new Book();
-            Map<Long, User> ownedBy = new LinkedHashMap<>();
+            List<Long> ownedBy = new ArrayList<>();
 
             while (resultSet.next()) {
                 fillBookFields(book, resultSet);
                 addOwnedBy(ownedBy, resultSet);
             }
-            book.setOwnedBy(new ArrayList<>(ownedBy.values()));
+            setOwnedByInBook(book, ownedBy);
 
             return book.getId() != null
                     ? book
                     : null;
         }
 
-        private static void addOwnedBy(Map<Long, User> ownedBy, ResultSet resultSet) throws SQLException {
-            Long userId = resultSet.getLong("u_id");
+        private static void addOwnedBy(List<Long> ownedBy, ResultSet resultSet) throws SQLException {
+            long userId = resultSet.getLong("u_id");
 
-            if (userId != 0 && !ownedBy.containsKey(userId)) {
-                ownedBy.put(userId, new UserLazyInitProxy(userId));
+            if (userId != 0) {
+                ownedBy.add(userId);
             }
         }
 
@@ -306,13 +307,13 @@ public class BookDaoJdbcImpl implements BookDao {
 
         private static List<Book> mapResultList(ResultSet resultSet) throws SQLException {
             List<Book> books = new ArrayList<>();
-            Map<Long, User> ownedBy = new LinkedHashMap<>();
+            List<Long> ownedBy = new ArrayList<>();
             Book book = new Book();
 
             while (resultSet.next()) {
                 if (book.getId() != null
                         && !book.getId().equals(resultSet.getLong("id"))) {
-                    book.setOwnedBy(new ArrayList<>(ownedBy.values()));
+                    setOwnedByInBook(book, ownedBy);
                     books.add(book);
                     book = new Book();
                     ownedBy.clear();
@@ -320,10 +321,16 @@ public class BookDaoJdbcImpl implements BookDao {
                 fillBookFields(book, resultSet);
                 addOwnedBy(ownedBy, resultSet);
             }
-            book.setOwnedBy(new ArrayList<>(ownedBy.values()));
+            setOwnedByInBook(book, ownedBy);
             books.add(book);
 
             return books;
+        }
+
+        private static void setOwnedByInBook(Book book, List<Long> ownedBy) {
+            book.setOwnedBy(ownedBy.stream()
+                    .map(id -> (User) proxyFactory.proxyOfUser(id))
+                    .toList());
         }
     }
 }

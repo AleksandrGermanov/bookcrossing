@@ -6,7 +6,7 @@ import book.dto.BookDto;
 import book.dto.BookMapper;
 import book.model.Book;
 import book.model.OwnerCard;
-import exception.OwnerMismatchException;
+import exception.mismatch.OwnerMismatchException;
 import exception.notfound.BookNotFoundException;
 import exception.notfound.OwnerCardNotFoundException;
 import exception.notfound.UserNotFoundException;
