@@ -44,11 +44,12 @@ public class BookServiceImpl implements BookService {
     public BookDto createBook(Long ownerId, BookDto bookDto) {
         Book bookToCreate = bookMapper.bookFromDto(bookDto);
         validationService.validate(bookToCreate);
-        Book created = bookDao.create(bookToCreate);
         UserLazyInitProxy ownerProxy =  proxyFactory.proxyOfUser(ownerId);
         if(!ownerProxy.referencesExisting()){
             throw new UserNotFoundException(ownerId);
         }
+        Book created = bookDao.create(bookToCreate);
+
         created.setOwnedBy(List.of(ownerProxy));
         ownerCardDao.create(new OwnerCard(null,
                 ownerProxy,
@@ -111,12 +112,13 @@ public class BookServiceImpl implements BookService {
                 )));
         Long currentOwnerId = currentOwnerCard.getOwner().getId();
         checkBookOwner(userFromId, bookId, currentOwnerId);
-        currentOwnerCard.setOwnedTill(LocalDateTime.now());
-        ownerCardDao.update(currentOwnerCard);
         UserLazyInitProxy userToProxy =  proxyFactory.proxyOfUser(userToId);
+
         if(!userToProxy.referencesExisting()){
             throw new UserNotFoundException(userToId);
         }
+        currentOwnerCard.setOwnedTill(LocalDateTime.now());
+        ownerCardDao.update(currentOwnerCard);
         ownerCardDao.create(new OwnerCard(
                 null,
                 userToProxy,

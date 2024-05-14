@@ -37,7 +37,13 @@ public class BookController extends HttpServlet {
         String method = request.getMethod().toUpperCase();
 
         switch (method) {
-            case "GET" -> doGet(request, response);
+            case "GET" -> {
+                if (request.getRequestURI().matches("/books/search/?")) {
+                    doSearch(request,response);
+                } else {
+                    doGet(request, response);
+                }
+            }
             case "POST" -> {
                 switch (request.getRequestURI()) {
                     case "/books", "/books/" -> doPost(request, response);
@@ -168,7 +174,7 @@ public class BookController extends HttpServlet {
 
     private LinkedHashMap<String, String> formParamsMap(Map<String, String[]> parameterMap) {
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
-        Set<String> parameterSet = Set.of("title", "author", "publication-year", "is-available");
+        Set<String> parameterSet = Set.of("title", "author", "published-since", "is-available");
         for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
             if (parameterSet.contains(param.getKey())) {
                 params.put(param.getKey(), param.getValue()[0]);

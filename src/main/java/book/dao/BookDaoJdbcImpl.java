@@ -169,7 +169,7 @@ public class BookDaoJdbcImpl implements BookDao {
         for (Map.Entry<String, String> param : params.entrySet()) {
             switch (param.getKey()) {
                 case "title", "author" -> preparedStatement.setString(++index, '%' + param.getValue() + '%');
-                case "publication-year" -> preparedStatement.setInt(++index, Integer.parseInt(param.getValue()));
+                case "published-since" -> preparedStatement.setInt(++index, Integer.parseInt(param.getValue()));
                 case "is-available" -> preparedStatement.setBoolean(++index, Boolean.parseBoolean(param.getValue()));
                 default -> throw new IllegalArgumentException("BookSearch parameter is invalid.");
             }
