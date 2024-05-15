@@ -2,8 +2,12 @@ package util.jdbc;
 
 import exception.BookcrossingIOException;
 import exception.DbException;
+import org.postgresql.Driver;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +23,16 @@ public class JdbcUtils {
 
     static {
         init();
+    }
+
+    private static void init() {
+        url = System.getenv("DB_URL");
+        user = System.getenv("DB_USER");
+        password = System.getenv("DB_PASSWORD");
+        if (url != null && user != null && password != null) {
+            return;
+        }
+        initWithPropertiesReader();
     }
 
     public static void setPath(Path propertiesPath) {
@@ -50,6 +64,7 @@ public class JdbcUtils {
     }
 
     public static <T> T inTransactionGet(InConnectionSupplier<T> supplier) {
+        init();
         Connection connection = getConnection();
         if (connection == null) {
             return null;
@@ -88,22 +103,6 @@ public class JdbcUtils {
         }
     }
 
-    private static void init() {
-        url = System.getenv("DB_URL") != null
-                ? System.getenv("DB_URL")
-                : null;
-        user = System.getenv("DB_USER") != null
-                ? System.getenv("DB_USER")
-                : null;
-        password = System.getenv("DB_PASSWORD") != null
-                ? System.getenv("DB_PASSWORD")
-                : null;
-        if (url != null && user != null && password != null) {
-            return;
-        }
-        initWithPropertiesReader();
-    }
-
     private static void initWithPropertiesReader() {
         PropertiesReader reader = propertiesPath != null
                 ? new PropertiesReader(propertiesPath)
@@ -119,7 +118,9 @@ public class JdbcUtils {
             connection = DriverManager.getConnection(url,
                     user, password);
         } catch (SQLException e) {
-            throw new DbException("Could not obtain connection.");
+            throw new DbException(String.format(
+                    "Could not obtain connection due to " + e.getMessage() + ". URL = %s, USER = %s, PASSWORD = %s",
+                    url, user, password));
         }
         return connection;
     }
@@ -148,7 +149,17 @@ public class JdbcUtils {
             try (Stream<String> props = Files.lines(directoryPath, StandardCharsets.UTF_8)) {
                 properties = props.toList();
             } catch (IOException e) {
-                throw new BookcrossingIOException("Reading from 'jdbc.properties failed.");
+                try (InputStream inStream = JdbcUtils.class.getClassLoader().getResourceAsStream(
+                        "jdbc.properties")) {
+                    if (inStream == null) {
+                        throw new IOException();
+                    }
+                    Stream<String> props = new BufferedReader(new InputStreamReader(
+                            inStream, StandardCharsets.UTF_8)).lines();
+                    properties = props.toList();
+                } catch (IOException ex) {
+                    throw new BookcrossingIOException("Reading from 'jdbc.properties failed.");
+                }
             }
         }
 
