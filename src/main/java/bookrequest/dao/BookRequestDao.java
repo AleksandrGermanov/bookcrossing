@@ -1,7 +1,7 @@
 package bookrequest.dao;
 
 import bookrequest.model.BookRequest;
-import util.dao.CommonDao;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BookRequestDao extends CommonDao<BookRequest, Long> {
+public interface BookRequestDao extends JpaRepository<BookRequest, Long> {
 }

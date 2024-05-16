@@ -1,6 +1,7 @@
 package book.service;
 
 import book.dto.BookDto;
+import book.model.Book;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,4 +20,6 @@ public interface BookService {
     List<BookDto> searchByParams(LinkedHashMap<String, String> params, BookFetchOrder order);
 
     void giveBookAway(Long userFromId, Long userToId, Long bookId);
+
+    Book getBookElseThrow(Long id);
 }

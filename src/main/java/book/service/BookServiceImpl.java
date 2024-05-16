@@ -9,50 +9,36 @@ import book.model.OwnerCard;
 import exception.mismatch.OwnerMismatchException;
 import exception.notfound.BookNotFoundException;
 import exception.notfound.OwnerCardNotFoundException;
-import exception.notfound.UserNotFoundException;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import user.dao.UserLazyInitProxy;
+import org.springframework.stereotype.Service;
 import user.model.User;
-import util.beanlib.DaoLib;
-import util.beanlib.MapperLib;
-import util.beanlib.ProxyFactory;
-import util.validation.ValidationService;
+import user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+
+@Service
 @RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
     private final BookDao bookDao;
+    private final UserService userService;
     private final OwnerCardDao ownerCardDao;
     private final BookMapper bookMapper;
-    private final ValidationService validationService;
-    @Setter
-    private ProxyFactory proxyFactory;
-
-    public BookServiceImpl(){
-        bookDao = DaoLib.getDefaultBookDao();
-        ownerCardDao = DaoLib.getDefaultOwnerCardDao();
-        bookMapper = MapperLib.getDefaultBookMapper();
-        validationService = ValidationService.DEFAULT_INSTANCE;
-        proxyFactory = new ProxyFactory();
-    }
+    private final Validator validator;
 
     @Override
     public BookDto createBook(Long ownerId, BookDto bookDto) {
         Book bookToCreate = bookMapper.bookFromDto(bookDto);
-        validationService.validate(bookToCreate);
-        UserLazyInitProxy ownerProxy =  proxyFactory.proxyOfUser(ownerId);
-        if(!ownerProxy.referencesExisting()){
-            throw new UserNotFoundException(ownerId);
-        }
-        Book created = bookDao.create(bookToCreate);
+        validator.validate(bookToCreate);
+        User owner = userService.getUserElseThrow(ownerId);
+        Book created = bookDao.save(bookToCreate);
 
-        created.setOwnedBy(List.of(ownerProxy));
-        ownerCardDao.create(new OwnerCard(null,
-                ownerProxy,
+        created.setOwnedBy(List.of(owner));
+        ownerCardDao.save(new OwnerCard(null,
+                owner,
                 created,
                 LocalDateTime.now(),
                 null));
@@ -64,12 +50,14 @@ public class BookServiceImpl implements BookService {
     public BookDto updateBook(Long userId, Long bookId, BookDto bookDto) {
         bookDto.setId(bookId);
         Book bookToUpdate = getBookElseThrow(bookId);
-        List<User> owners = bookToUpdate.getOwnedBy();
-        Long currentOwnerId = owners.get(owners.size() - 1).getId();
+        Long currentOwnerId = ownerCardDao.obtainCurrentByBookId(bookId).orElseThrow(
+                () -> new OwnerCardNotFoundException(String.format(
+                        "Current ownerCard for book with id = %d is not found.", bookId))
+        ).getOwner().getId();
         checkBookOwner(userId, bookId, currentOwnerId);
         mergeIntoBook(bookDto, bookToUpdate);
-        validationService.validate(bookToUpdate);
-        Book updated = bookDao.update(bookToUpdate);
+        validator.validate(bookToUpdate);
+        Book updated = bookDao.save(bookToUpdate);
 
         return bookMapper.dtoFromBook(updated);
     }
@@ -87,7 +75,7 @@ public class BookServiceImpl implements BookService {
                 )));
         Long currentOwnerId = currentOwnerCard.getOwner().getId();
         checkBookOwner(userId, bookId, currentOwnerId);
-        bookDao.delete(bookId);
+        bookDao.deleteById(bookId);
     }
 
     @Override
@@ -112,19 +100,22 @@ public class BookServiceImpl implements BookService {
                 )));
         Long currentOwnerId = currentOwnerCard.getOwner().getId();
         checkBookOwner(userFromId, bookId, currentOwnerId);
-        UserLazyInitProxy userToProxy =  proxyFactory.proxyOfUser(userToId);
+        User userTo = userService.getUserElseThrow(userToId);
 
-        if(!userToProxy.referencesExisting()){
-            throw new UserNotFoundException(userToId);
-        }
         currentOwnerCard.setOwnedTill(LocalDateTime.now());
-        ownerCardDao.update(currentOwnerCard);
-        ownerCardDao.create(new OwnerCard(
+        ownerCardDao.save(currentOwnerCard);
+        ownerCardDao.save(new OwnerCard(
                 null,
-                userToProxy,
+                userTo,
                 currentOwnerCard.getBook(),
                 LocalDateTime.now(),
                 null));
+    }
+
+    @Override
+    public Book getBookElseThrow(Long id) {
+        return bookDao.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
     }
 
     private void checkBookOwner(Long userFromId, Long bookId, Long currentOwnerId) {
@@ -151,10 +142,5 @@ public class BookServiceImpl implements BookService {
         if (isAvailable != null) {
             bookToUpdate.setIsAvailable(isAvailable);
         }
-    }
-
-    private Book getBookElseThrow(Long id) {
-        return bookDao.obtain(id)
-                .orElseThrow(() -> new BookNotFoundException(id));
     }
 }

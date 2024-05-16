@@ -39,7 +39,7 @@ public class BookController extends HttpServlet {
         switch (method) {
             case "GET" -> {
                 if (request.getRequestURI().matches("/books/search/?")) {
-                    doSearch(request,response);
+                    doSearch(request, response);
                 } else {
                     doGet(request, response);
                 }

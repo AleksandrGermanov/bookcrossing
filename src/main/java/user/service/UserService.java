@@ -1,6 +1,7 @@
 package user.service;
 
 import user.dto.UserDto;
+import user.model.User;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface UserService {
     void deleteUser(Long id);
 
     List<UserDto> findAll();
+
+    User getUserElseThrow(Long id);
 }

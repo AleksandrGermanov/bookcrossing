@@ -1,6 +1,7 @@
 package bookrequest.service;
 
 import book.model.Book;
+import book.service.BookService;
 import bookrequest.dao.BookRequestDao;
 import bookrequest.dto.BookRequestDto;
 import bookrequest.dto.BookRequestMapper;
@@ -8,9 +9,11 @@ import bookrequest.model.BookRequest;
 import exception.mismatch.OwnerMismatchException;
 import exception.mismatch.BookStatusMismatchException;
 import exception.notfound.BookRequestNotFoundException;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import user.model.User;
+import user.service.UserService;
 import util.beanlib.DaoLib;
 import util.beanlib.MapperLib;
 import util.beanlib.ProxyFactory;
@@ -21,21 +24,15 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 public class BookRequestServiceImpl implements BookRequestService {
+    private final BookService bookService;
+    private final UserService userService;
     private final BookRequestDao bookRequestDao;
     private final BookRequestMapper bookRequestMapper;
-    private final ValidationService validationService;
-    @Setter
-    private ProxyFactory proxyFactory;
+    private final Validator validator;
 
-    public BookRequestServiceImpl(){
-        bookRequestDao = DaoLib.getDefaultBookRequestDao();
-        bookRequestMapper = MapperLib.getDefaultBookRequestMapper();
-        validationService = ValidationService.DEFAULT_INSTANCE;
-        proxyFactory = new ProxyFactory();
-    }
     @Override
     public BookRequestDto createBookRequest(Long requesterId, Long bookId) {
-        Book book = proxyFactory.proxyOfBook(bookId);
+        Book book = bookService.getBookElseThrow(bookId);
         if(!book.getIsAvailable()){
             throw new BookStatusMismatchException(String.format(
                     "Book with id = %d is not available for requests.", bookId));
@@ -49,9 +46,9 @@ public class BookRequestServiceImpl implements BookRequestService {
             );
         }
 
-        BookRequest requestToSave = new BookRequest(proxyFactory.proxyOfUser(requesterId), book);
-        validationService.validate(requestToSave);
-        BookRequest saved = bookRequestDao.create(requestToSave);
+        BookRequest requestToSave = new BookRequest(userService.getUserElseThrow(requesterId), book);
+        validator.validate(requestToSave);
+        BookRequest saved = bookRequestDao.save(requestToSave);
 
         return bookRequestMapper.dtoFromBookRequest(saved);
     }
@@ -73,11 +70,11 @@ public class BookRequestServiceImpl implements BookRequestService {
             );
         }
 
-        bookRequestDao.delete(bookRequestId);
+        bookRequestDao.deleteById(bookRequestId);
     }
 
     private BookRequest getRequestOrElseThrow(Long bookRequestId) {
-        return bookRequestDao.obtain(bookRequestId).orElseThrow(
+        return bookRequestDao.findById(bookRequestId).orElseThrow(
                 () -> new BookRequestNotFoundException(bookRequestId));
     }
 }

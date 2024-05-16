@@ -1,6 +1,6 @@
 package user.service;
 
-import org.junit.jupiter.api.BeforeAll;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ class UserServiceImplTest {
     @Mock
     private UserMapper userMapper;
     @Mock
-    private ValidationService validationService;
+    private Validator validator;
     @InjectMocks
     private UserServiceImpl userService;
     UserDto userDto;
@@ -43,29 +43,29 @@ class UserServiceImplTest {
     @Test
     void createUser() {
         when(userMapper.userFromDto(userDto)).thenReturn(user);
-        when(userDao.create(user)).thenReturn(user);
+        when(userDao.save(user)).thenReturn(user);
         when(userMapper.dtoFromUser(user)).thenReturn(userDto);
 
         assertEquals(userDto, userService.createUser(userDto));
-        verify(validationService, times(1)).validate(user);
+        verify(validator, times(1)).validate(user);
     }
 
     @Test
     void updateUser() {
         userDto.setName("another");
 
-        when(userDao.obtain(1L)).thenReturn(Optional.of(user));
-        when(userDao.update(user)).thenReturn(user);
+        when(userDao.findById(1L)).thenReturn(Optional.of(user));
+        when(userDao.save(user)).thenReturn(user);
         when(userMapper.dtoFromUser(user)).thenReturn(userDto);
 
         assertEquals(userDto, userService.updateUser(1L, userDto));
         assertEquals("another", user.getName());
-        verify(validationService, times(1)).validate(user);
+        verify(validator, times(1)).validate(user);
     }
 
     @Test
     void retrieveUser() {
-        when(userDao.obtain(1L)).thenReturn(Optional.of(user));
+        when(userDao.findById(1L)).thenReturn(Optional.of(user));
         when(userMapper.dtoFromUser(user)).thenReturn(userDto);
 
         assertEquals(userDto, userService.retrieveUser(1L));

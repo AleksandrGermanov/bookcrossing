@@ -2,36 +2,30 @@ package user.service;
 
 import exception.exists.UserExistsException;
 import exception.notfound.UserNotFoundException;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import user.dao.UserDao;
 import user.dto.UserDto;
 import user.dto.UserMapper;
 import user.model.User;
-import util.beanlib.DaoLib;
-import util.beanlib.MapperLib;
-import util.validation.ValidationService;
 
 import java.util.List;
 
+@Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final UserMapper userMapper;
-    private final ValidationService validationService;
-
-    public UserServiceImpl(){
-        userDao = DaoLib.getDefaultUserDao();
-        userMapper = MapperLib.getDefaultUserMapper();
-        validationService = ValidationService.DEFAULT_INSTANCE;
-    }
+    private final Validator validator;
 
     @Override
     public UserDto createUser(UserDto userDto) {
         throwIfExists(userDto.getId());
 
         User userToCreate = userMapper.userFromDto(userDto);
-        validationService.validate(userToCreate);
-        User created = userDao.create(userToCreate);
+        validator.validate(userToCreate);
+        User created = userDao.save(userToCreate);
 
         return userMapper.dtoFromUser(created);
     }
@@ -42,8 +36,8 @@ public class UserServiceImpl implements UserService {
 
         userDto.setId(id);
         mergeIntoUser(userDto, userToUpdate);
-        validationService.validate(userToUpdate);
-        User updated = userDao.update(userToUpdate);
+        validator.validate(userToUpdate);
+        User updated = userDao.save(userToUpdate);
 
         return userMapper.dtoFromUser(updated);
     }
@@ -55,7 +49,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long id) {
-        userDao.delete(id);
+        userDao.deleteById(id);
     }
 
     @Override
@@ -63,6 +57,12 @@ public class UserServiceImpl implements UserService {
         return userDao.findAll().stream()
                 .map(userMapper::dtoFromUser)
                 .toList();
+    }
+
+    @Override
+    public User getUserElseThrow(Long id) {
+        return userDao.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     private void mergeIntoUser(UserDto updated, User userToUpdate) {
@@ -74,18 +74,12 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private User getUserElseThrow(Long id) {
-        return userDao.obtain(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
-    }
-
-
     private void throwIfExists(Long userId) {
         if (userId == null) {
             return;
         }
 
-        if (userDao.exists(userId)) {
+        if (userDao.existsById(userId)) {
             throw new UserExistsException(userId);
         }
     }
