@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - include:
+      file: create-table-request_logs.sql
+      relativeToChangelogFile: true
+
+changeSet:
+  id: 0.1
+  author: A.Germanov
+  logicalFilePath: 0.1/master.yaml
+  changes:
+    - sqlFile:
+        path:
+          create-table-request_logs.sql
+        relativeToChangelogFile:
+          true
+    - tagDatabase:
+        tag: 0.1
+  rollback:
+    - delete:
+        tableName:
+          request_logs

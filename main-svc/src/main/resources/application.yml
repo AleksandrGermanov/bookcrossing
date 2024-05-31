@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    active:
+      localhost
+
+server:
+  port:
+    8088
+
+springdoc:
+  api-docs:
+    path:
+      /docs
+  swagger-ui:
+    path:
+      /swagger
+  operationsSorter:
+    method
