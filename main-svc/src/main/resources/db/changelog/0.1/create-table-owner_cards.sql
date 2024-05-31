@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS owner_cards(
+id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+owner_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+book_id BIGINT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+owned_since TIMESTAMP NOT NULL,
+owned_till TIMESTAMP,
+
+CONSTRAINT owned_till_IS_AFTER_owned_since CHECK (owned_till = NULL OR owned_till > owned_since)
+);

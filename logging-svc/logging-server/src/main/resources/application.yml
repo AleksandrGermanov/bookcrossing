@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active:
+      localhost
+
+server:
+  port:
+    9099

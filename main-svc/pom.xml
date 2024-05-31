@@ -1,0 +1,69 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.astondevs.trainee</groupId>
+        <artifactId>bookcrossing</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>main-svc</artifactId>
+    <packaging>jar</packaging>
+
+    <name>main-svc</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <logging-client.version>0.1-SNAPSHOT</logging-client.version>
+        <bookcrossing-commons.version>0.1-SNAPSHOT</bookcrossing-commons.version>
+        <postgresql.version>42.3.8</postgresql.version>
+        <bookcrossing-commons.version>0.1-SNAPSHOT</bookcrossing-commons.version>
+        <logging-client.version>0.1-SNAPSHOT</logging-client.version>
+        <springdoc.version>2.3.0</springdoc.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ru.astondevs.trainee</groupId>
+            <artifactId>logging-client</artifactId>
+            <version>${logging-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.astondevs.trainee</groupId>
+            <artifactId>bookcrossing-commons</artifactId>
+            <version>${bookcrossing-commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

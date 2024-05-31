@@ -1,26 +1,45 @@
 services:
   main-server:
-    build: ./
-    image: main-server
-    container_name: main-server
+    build: ./main-svc/
+    image: main-service
+    container_name: main-service
     ports:
-      - "${TOMCAT_PORT}:${TOMCAT_PORT}"
+      - "${MAIN_SVC_PORT}:${MAIN_SVC_PORT}"
     depends_on:
-      - main-db
+      - common-db
+      - logging-svc
     restart: on-failure
     environment:
-      - DB_URL=jdbc:postgresql://main-db:${DB_PORT}/${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - TOMCAT_PORT=${TOMCAT_PORT}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://common-db:${DB_PORT}/${MAIN_SVC_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SERVER_PORT=${MAIN_SVC_PORT}
+      - LOGGING-SERVER_URL=http://logging-svc:${LOGGING_SVC_PORT}
 
-  main-db:
-    image: postgres:alpine
-    container_name: main-db
+  logging-svc:
+    build: ./logging-svc/logging-server
+    image: logging-service
+    container_name: logging-service
+    ports:
+      - "${LOGGING_SVC_PORT}:${LOGGING_SVC_PORT}"
+    depends_on:
+      - common-db
+    restart: on-failure
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://common-db:${DB_PORT}/${LOGGING_SVC_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SERVER_PORT=${LOGGING_SVC_PORT}
+
+  common-db:
+    image: mirror.gcr.io/postgres:alpine
+    container_name: common-db
     command: -p ${DB_PORT}
     ports:
       - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - ./create-database-logs.sql:/docker-entrypoint-initdb.d/create-database-logs.sql
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_DB=${MAIN_SVC_DB_NAME}
